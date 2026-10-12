@@ -120,6 +120,24 @@ body.modo-anuncio{overflow:auto;height:auto}
 /* Reveal */
 .msg.revelacion{border:2px solid rgba(240,192,80,.65)!important;background:linear-gradient(160deg,rgba(45,30,8,.97),rgba(15,10,30,.99))!important;box-shadow:0 0 60px rgba(240,192,80,.28),0 8px 32px rgba(0,0,0,.55)!important;text-align:center!important;padding:1.5rem 1rem!important;max-width:94%!important;align-self:center!important}
 
+/* Burbuja latidos */
+.msg.latidos-bub{
+  align-self:flex-start;
+  background:linear-gradient(160deg,rgba(45,8,8,.97),rgba(18,6,24,.99))!important;
+  border:1.5px solid rgba(255,80,80,.3)!important;
+  text-align:center;
+  padding:1.1rem .9rem!important;
+  max-width:88%!important;
+  animation:msgIn .4s cubic-bezier(.2,1.3,.4,1);
+}
+.lati-label{font-family:'Fredoka',sans-serif;font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,110,110,.55);margin-bottom:10px}
+.lati-row{display:flex;justify-content:center;align-items:center;gap:7px}
+.lati-h{display:inline-block;font-size:1.9rem;animation:latiH .43s ease-in-out infinite}
+.lati-h:nth-child(2){animation-delay:.21s}
+.lati-h:nth-child(3){animation-delay:.43s}
+@keyframes latiH{0%,100%{transform:scale(.88);opacity:.4}50%{transform:scale(1.6);opacity:1}}
+.lati-bpm{font-family:'Fredoka',sans-serif;font-size:.72rem;color:rgba(255,150,150,.45);margin-top:8px}
+
 .typing{align-self:flex-start;background:var(--bub);border-radius:18px;border-bottom-left-radius:6px;padding:.85rem 1rem;display:flex;gap:5px;border:1px solid rgba(255,255,255,.07)}
 .typing i{width:7px;height:7px;border-radius:50%;background:var(--dim);animation:tp 1.1s ease-in-out infinite}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
@@ -128,12 +146,13 @@ body.modo-anuncio{overflow:auto;height:auto}
 #barra{flex:0 0 auto;padding:10px 12px max(env(safe-area-inset-bottom),12px);position:relative;z-index:3;background:var(--header);border-top:1px solid rgba(255,255,255,.06)}
 #opciones{display:flex;flex-wrap:wrap;gap:.55rem;justify-content:flex-end}
 .opcion{padding:.75rem 1.15rem;min-height:48px;border-radius:999px;border:1.5px solid var(--bord);background:rgba(240,192,80,.07);color:var(--ink);cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;font-size:.88rem;transition:all .22s;animation:opIn .4s cubic-bezier(.2,1.3,.4,1) backwards}
-.opcion:nth-child(2){animation-delay:.08s}.opcion:nth-child(3){animation-delay:.16s}
+.opcion:nth-child(2){animation-delay:.08s}.opcion:nth-child(3){animation-delay:.16s}.opcion:nth-child(4){animation-delay:.24s}
 @keyframes opIn{0%{transform:translateY(16px);opacity:0}100%{transform:none;opacity:1}}
 .opcion:active{transform:scale(.96)}
 .opcion.primaria{background:linear-gradient(110deg,var(--gold2),#906010);border:none;color:#fff}
 .opcion.mega{width:100%;text-align:center;padding:1rem;animation:opIn .4s backwards,megaGlow 1.4s ease-in-out infinite;font-family:'Fredoka',sans-serif;font-size:1.15rem}
 @keyframes megaGlow{0%,100%{box-shadow:0 0 18px rgba(240,192,80,.35)}50%{box-shadow:0 0 50px rgba(240,192,80,.7)}}
+.opcion.emoji-op{flex-direction:column;align-items:center;gap:2px;padding:.6rem .8rem;min-height:62px;display:flex}
 .vacia{color:var(--dim);font-size:.8rem;text-align:center;padding:.4rem}
 #form-inline{display:none;flex-direction:column;gap:.55rem}
 .in-chat{width:100%;padding:.85rem 1rem;min-height:48px;border-radius:14px;border:1.5px solid var(--bord);background:rgba(255,255,255,.05);color:var(--ink);font-family:'Nunito',sans-serif;font-size:.92rem;outline:none;transition:border-color .3s}
@@ -242,8 +261,8 @@ footer{text-align:center;padding:30px 20px 50px;position:relative;z-index:2}
 footer a{font-family:'Fredoka',sans-serif;font-size:.75rem;color:rgba(255,255,255,.22);text-decoration:none;letter-spacing:.1em}
 footer a:hover{color:rgba(255,255,255,.42)}
 
-@media(max-width:390px){.flip-n{font-size:7vw;min-width:13vw;padding:8px}.opcion{font-size:.82rem;padding:.65rem .9rem}.msg{font-size:.88rem}.inv-titulo{font-size:5vw}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.rev{opacity:1;transform:none}.typing i{animation-duration:1.1s!important;animation-iteration-count:infinite!important}}
+@media(max-width:390px){.flip-n{font-size:7vw;min-width:13vw;padding:8px}.opcion{font-size:.82rem;padding:.65rem .9rem}.msg{font-size:.88rem}.inv-titulo{font-size:5vw}.opcion.emoji-op{padding:.5rem .6rem;min-height:56px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.rev{opacity:1;transform:none}.typing i{animation-duration:1.1s!important;animation-iteration-count:infinite!important}.lati-h{animation-duration:.43s!important;animation-iteration-count:infinite!important}}
 </style>
 </head>
 <body>
@@ -302,13 +321,13 @@ footer a:hover{color:rgba(255,255,255,.42)}
       </div>
     </section>
 
-    <!-- ECOGRAFÍA (se muestra si hay foto, o un placeholder elegante) -->
+    <!-- ECOGRAFÍA -->
     <section class="fs rev eco-seccion">
       <div class="container">
         <div class="div-elegante"><span class="div-label">Nuestra primera foto</span></div>
         <div class="card" style="padding:0;overflow:hidden">
           <div class="eco-img-wrap">
-            <div id="eco-contenido"></div><!-- llenado por JS -->
+            <div id="eco-contenido"></div>
             <div class="eco-glow"></div>
           </div>
         </div>
@@ -360,11 +379,6 @@ footer a:hover{color:rgba(255,255,255,.42)}
         <div class="div-elegante"><span class="div-label">De los papás</span></div>
         <div class="msg-papas-card">
           <div class="msg-label">Betiana &amp; Ángel</div>
-          <!--
-            ╔════════════════════════════════╗
-            ║  EDITÁ este mensaje si querés  ║
-            ╚════════════════════════════════╝
-          -->
           <div class="msg-texto">
             "Todavía no lo podemos creer del todo.<br>
             Estamos felices, asustados y llenos de amor.<br>
@@ -409,17 +423,14 @@ footer a:hover{color:rgba(255,255,255,.42)}
 ══════════════════════════════════════════ */
 const CFG = {
   fechaISO: "2027-05-01T00:00:00",
-  // ↓ Tu número sin + ni espacios (ej: 5491112345678)
   wa: "5491100000000",
-  // ↓ Foto de ecografía: dejá "" hasta tenerla, luego pegá la URL o base64
-  //   ej: ecoFoto = "https://..." o ecoFoto = "data:image/jpeg;base64,..."
   ecoFoto: "",
-  supabaseUrl: "https://oyhbnzisrdowlwyghjrp.supabase.co",
+  supabaseUrl: "https://oyhbnzisrdowlwywghjrp.supabase.co",
   supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95aGJuemlzcmRvd2x3eWdoanJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTU2ODgsImV4cCI6MjA5NTgzMTY4OH0.wKoyPCRuVbhzxbVsLUcw1h_uv2oGcxfuiJSHDOvgzaw",
   supabaseTable: "mensajes_bebe",
 };
 
-const YO = { nombre:"", reaccion:"", asiste:null };
+const YO = { nombre:"", reaccion:"", reaccion_emoji:"", asiste:null };
 const $    = id => document.getElementById(id);
 const rnd  = (a,b) => a + Math.random()*(b-a);
 const sleep= ms => new Promise(r=>setTimeout(r,ms));
@@ -437,6 +448,117 @@ const sndR=()=>pop(540,.09);
 const sndE=()=>pop(760,.08);
 function sndMagico(){try{ensureCtx();const T=actx.currentTime;[660,880,1100,1320,1760].forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain(),t=T+i*.1;o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(.1,t);g.gain.exponentialRampToValueAtTime(.001,t+.9);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+.95)})}catch(e){}}
 function sndReveal(){try{ensureCtx();const T=actx.currentTime;[440,550,660,820,1100,1320,1760].forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain(),t=T+i*.08;o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(.11,t);g.gain.exponentialRampToValueAtTime(.001,t+1.3);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+1.35)})}catch(e){}}
+
+/* ─ LATIDOS DEL BEBÉ ─ */
+function sndLatidos(durMs){
+  try{
+    ensureCtx();
+    const bpm=142; // latidos/min de un bebé
+    const T=actx.currentTime;
+    const interval=60/bpm;
+    const beats=Math.ceil((durMs/1000)*(bpm/60))+2;
+    function latido(t,gain,decay){
+      const buf=actx.createBuffer(1,actx.sampleRate*.11,actx.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.2);
+      const src=actx.createBufferSource();src.buffer=buf;
+      const bf=actx.createBiquadFilter();bf.type="bandpass";bf.frequency.value=58;bf.Q.value=1.4;
+      const gn=actx.createGain();gn.gain.setValueAtTime(gain,t);gn.gain.exponentialRampToValueAtTime(.001,t+decay);
+      src.connect(bf);bf.connect(gn);gn.connect(actx.destination);src.start(t);
+    }
+    for(let i=0;i<beats;i++){
+      const bt=T+i*interval;
+      latido(bt,.4,.17);   // lub
+      latido(bt+.088,.26,.14); // dub
+    }
+  }catch(e){}
+}
+
+async function mostrarLatidos(){
+  const div=document.createElement("div");
+  div.className="msg latidos-bub";
+  div.innerHTML=`
+    <div class="lati-label">🫀 latidos del bebé · 142 lpm</div>
+    <div class="lati-row">
+      <span class="lati-h">💓</span>
+      <span class="lati-h">💓</span>
+      <span class="lati-h">💓</span>
+    </div>
+    <div class="lati-bpm">lub-dub · lub-dub · lub-dub...</div>
+    <span class="hora">${hora()}</span>
+  `;
+  M.appendChild(div);scroll();
+  return div;
+}
+
+/* ─ CRACK ─ */
+function sndCrack(){
+  try{
+    ensureCtx();
+    const T=actx.currentTime;
+    const buf=actx.createBuffer(1,actx.sampleRate*.55,actx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.4);
+    const src=actx.createBufferSource();
+    src.buffer=buf;
+    const bf=actx.createBiquadFilter();bf.type="lowpass";bf.frequency.value=180;
+    const gR=actx.createGain();gR.gain.setValueAtTime(.55,T);gR.gain.exponentialRampToValueAtTime(.001,T+.55);
+    src.connect(bf);bf.connect(gR);gR.connect(actx.destination);src.start(T);
+    const buf2=actx.createBuffer(1,actx.sampleRate*.09,actx.sampleRate);
+    const d2=buf2.getChannelData(0);
+    for(let i=0;i<d2.length;i++)d2[i]=(Math.random()*2-1)*Math.pow(1-i/d2.length,3);
+    const src2=actx.createBufferSource();src2.buffer=buf2;
+    const bf2=actx.createBiquadFilter();bf2.type="highpass";bf2.frequency.value=2000;
+    const gS=actx.createGain();gS.gain.setValueAtTime(.38,T);gS.gain.exponentialRampToValueAtTime(.001,T+.09);
+    src2.connect(bf2);bf2.connect(gS);gS.connect(actx.destination);src2.start(T);
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type="sine";o.frequency.setValueAtTime(90,T);o.frequency.exponentialRampToValueAtTime(25,T+.35);
+    g.gain.setValueAtTime(.5,T);g.gain.exponentialRampToValueAtTime(.001,T+.35);
+    o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+.35);
+  }catch(e){}
+}
+
+function drawCracks(canvas){
+  const W=canvas.width=innerWidth,H=canvas.height=innerHeight;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,W,H);
+  const cx=W/2+rnd(-30,30), cy=H/2+rnd(-20,20);
+  const arms=rnd(10,16)|0;
+  ctx.lineCap="round";
+  function crackLine(x,y,ang,len,depth){
+    if(depth>5||len<12)return;
+    const jitter=(Math.random()-.5)*0.55;
+    const ex=x+Math.cos(ang+jitter)*len;
+    const ey=y+Math.sin(ang+jitter)*len;
+    const w=Math.max(.5,(4-depth)*.8+(Math.random()*.6));
+    const alpha=Math.min(1,1-depth*.16);
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);
+    ctx.strokeStyle=`rgba(255,200,60,${alpha*.38})`;ctx.lineWidth=w*4;
+    ctx.shadowColor="#FFD700";ctx.shadowBlur=14;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);
+    ctx.strokeStyle=`rgba(255,255,220,${alpha})`;ctx.lineWidth=w;
+    ctx.shadowBlur=0;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(ex,ey);
+    ctx.strokeStyle=`rgba(0,0,0,${alpha*.55})`;ctx.lineWidth=w*.4;
+    ctx.globalCompositeOperation="multiply";ctx.stroke();
+    ctx.globalCompositeOperation="source-over";
+    const branches=depth<2?3:depth<4?2:Math.random()>.55?1:0;
+    const spread=(Math.PI*.45)/(depth+1);
+    for(let i=0;i<branches;i++){
+      const a=ang+(Math.random()-.5)*spread*(i%2===0?1:-1);
+      crackLine(ex,ey,a,len*rnd(.55,.78),depth+1);
+    }
+  }
+  for(let i=0;i<arms;i++){
+    const angle=(i/arms)*Math.PI*2+rnd(-.18,.18);
+    const length=rnd(H*.22,H*.52);
+    crackLine(cx,cy,angle,length,0);
+  }
+  ctx.beginPath();
+  for(let i=0;i<3;i++){const r=rnd(6,14);ctx.arc(cx+rnd(-8,8),cy+rnd(-8,8),r,0,Math.PI*2)}
+  ctx.fillStyle="rgba(255,240,180,.92)";ctx.shadowColor="#FFD700";ctx.shadowBlur=22;ctx.fill();
+  ctx.shadowBlur=0;
+}
 
 /* ─ CONFETTI ─ */
 const cv=$("ccv"),cx=cv.getContext("2d");
@@ -461,9 +583,7 @@ function burbuja(html,quien,xc){
   quien==="ellos"?sndR():sndE();
   return d;
 }
-// Mensaje de sistema/bot: sin typing, aparece rápido (feel de app)
 async function botMsg(html,xc,ms){await sleep(ms??380);return burbuja(html,"ellos",xc)}
-// Mensaje humano: con typing animation
 async function ellos(html,xc,ms){
   setEstado("escribiendo…");
   const t=document.createElement("div");t.className="typing";t.innerHTML="<i></i><i></i><i></i>";
@@ -481,6 +601,25 @@ function elegir(opts){
       b.className="opcion"+(o.p?" primaria":"")+(o.m?" mega":"");
       b.textContent=o.label;
       b.onclick=()=>{cont.innerHTML="<div class=\"vacia\">...</div>";if(!o.s)yoDigo(o.label);res(o.v??o.label)};
+      cont.appendChild(b);
+    });
+    scroll();
+  });
+}
+function elegirReaccion(){
+  return new Promise(res=>{
+    const cont=$("opciones");cont.innerHTML="";
+    const hdr=document.createElement("div");
+    hdr.style.cssText="text-align:center;width:100%;font-family:'Fredoka',sans-serif;font-size:.82rem;color:rgba(255,255,255,.5);padding:.2rem 0 .45rem";
+    hdr.textContent="¿Primera reacción? 💛";
+    cont.appendChild(hdr);
+    [{e:"🥹",l:"Lloré"},{e:"🤩",l:"¡WOW!"},{e:"😱",l:"¡No puede ser!"},{e:"💛",l:"¡Los amo!"}]
+    .forEach((em,i)=>{
+      const b=document.createElement("button");
+      b.className="opcion emoji-op";
+      b.style.animationDelay=`${i*.07}s`;
+      b.innerHTML=`<span style="font-size:1.5rem">${em.e}</span><span style="font-size:.65rem;opacity:.7">${em.l}</span>`;
+      b.onclick=()=>{cont.innerHTML="<div class=\"vacia\">...</div>";yoDigo(`${em.e} ${em.l}`);res(`${em.e} ${em.l}`)};
       cont.appendChild(b);
     });
     scroll();
@@ -512,7 +651,6 @@ async function guion(){
   await sleep(700);
 
   /* ── FASE 1: LA INVITACIÓN FALSA ── */
-  // Mensajes de bot, sin typing animation, feel de app
   await botMsg("¡Hola! 💌",null,400);
   await sleep(350);
   await botMsg("Alguien especial pensó en vos para compartir un momento muy importante ✨");
@@ -559,8 +697,129 @@ async function guion(){
     await botMsg("Ay, qué lástima 😢 Igual te mandamos la invitación con todo el cariño 💛",null,450);
   }
 
+  await sleep(900);
+
+  /* ══ FASE 2: EL GIRO — TENSIÓN CRECIENTE ══ */
+  // "Para y vuelve" — simula que alguien duda antes de escribir
+  await ellos(`${fn}...`,null,1100);
+  await sleep(600);
+
+  // Para de tipear — pausa de tensión
+  setEstado("en línea");
+  await sleep(1100);
+
+  await ellos("Hay algo que tenemos que confesarte.",null,1600);
   await sleep(500);
-  await botMsg("¿Querés dejarles un mensajito a quienes organizan? 💌",null,400);
+  await ellos("Esta invitación no es lo que parece. 😅",null,1800);
+  await sleep(400);
+  await ellos("El evento no existe.",null,1100);
+  await sleep(500);
+  await ellos("No hay ningún plan para noviembre.",null,1400);
+  await sleep(700);
+  await ellos("La inventamos porque teníamos que darte una noticia y no se nos ocurrió otra manera de decírtela 🙈",null,2600);
+  await sleep(1100);
+  await ellos("Escuchá esto... 🫀",null,900);
+  await sleep(500);
+
+  /* ══ LATIDOS DEL BEBÉ ══ */
+  await mostrarLatidos();
+  sndLatidos(3800);
+  await sleep(3900);
+
+  /* Pausa dramática larga — el corazón que latió dejó su huella */
+  setEstado("escribiendo…");
+  const tR=document.createElement("div");tR.className="typing";tR.innerHTML="<i></i><i></i><i></i>";
+  M.appendChild(tR);scroll();
+  await sleep(2200);
+  tR.remove();setEstado("en línea");
+
+  /* ══ BLACKOUT + CRACK REVEAL ══ */
+  // Oscurecer pantalla antes del impacto
+  const blackout=document.createElement("div");
+  blackout.style.cssText="position:fixed;inset:0;z-index:200;background:#000;opacity:0;transition:opacity .38s;pointer-events:none";
+  document.body.appendChild(blackout);
+  blackout.style.opacity="1";
+  await sleep(480);
+
+  // Shake
+  const appEl=$("app");
+  appEl.style.animation="none";
+  appEl.offsetHeight;
+  appEl.style.animation="shakeIntense 1.1s cubic-bezier(.36,.07,.19,.97)";
+  sndCrack();
+
+  // Blackout se va con el crack
+  blackout.style.transition="opacity .65s";
+  blackout.style.opacity="0";
+  setTimeout(()=>blackout.remove(),750);
+
+  if(navigator.vibrate)navigator.vibrate([30,20,50,20,80,15,120,15,80,20,50,30,200]);
+
+  // Grietas
+  await sleep(300);
+  const crackCv=$("crack-cv");
+  drawCracks(crackCv);
+  crackCv.style.transition="opacity .15s";
+  crackCv.style.opacity="1";
+
+  // Flash rojo
+  await sleep(220);
+  const fl=$("flash");
+  fl.style.background="rgba(180,20,0,.55)";
+  fl.style.transition="opacity .12s";
+  fl.style.opacity="1";
+  await sleep(130);
+  fl.style.opacity="0";
+  await sleep(180);
+
+  // Flash blanco-dorado
+  fl.style.background="#FFF8E0";
+  fl.style.transition="opacity .08s";
+  fl.style.opacity="1";
+  await sleep(90);
+
+  // Grietas se desvanecen
+  crackCv.style.transition="opacity .7s";
+  crackCv.style.opacity="0";
+  appEl.style.animation="";
+
+  await sleep(160);
+  fl.style.transition="opacity .45s";
+  fl.style.opacity="0";
+
+  // Reveal
+  await sleep(120);
+  burbuja(
+    `<span style="display:block;font-size:2.8rem;margin-bottom:14px">🤰💛👶</span>`+
+    `<div style="font-family:'Fredoka',sans-serif;font-size:clamp(1.2rem,5vw,1.5rem);font-weight:700;letter-spacing:.02em;line-height:1.3">¡¡Bety y Ángel<br>van a ser PAPÁS!!</div>`+
+    `<div style="font-size:.94rem;color:rgba(255,255,255,.82);margin-top:9px">Un bebé está en camino ✨</div>`,
+    "ellos","revelacion"
+  );
+
+  sndReveal();
+  await sleep(280);
+  confetear(200);
+  const burst=$("pow-burst");burst.classList.add("pop");setTimeout(()=>burst.classList.remove("pop"),800);
+  if(navigator.vibrate)navigator.vibrate([80,50,160,50,100]);
+
+  await sleep(1300);
+  await ellos(`El bebé llega para el <b>1° de Mayo del 2027</b> 🌟`,null,1500);
+  await sleep(400);
+  await ellos("Ya tenemos 12 semanas... ¡y todavía no lo podemos creer! 🥹",null,2000);
+  await sleep(700);
+  await ellos(`¡Gracias por ser parte de este momento, ${fn}! 💛`,null,1600);
+  await sleep(700);
+
+  /* ══ FASE 3: REACCIÓN (ahora sí saben la noticia) ══ */
+  await botMsg("¿Cuál fue tu primera reacción? 💛",null,400);
+  await sleep(200);
+
+  const emoji = await elegirReaccion();
+  YO.reaccion_emoji = emoji;
+
+  await botMsg("¡Nos van a alegrar mucho cuando lo vean! 🥹",null,380);
+  await sleep(400);
+  await botMsg("¿Querés dejarles un mensajito a los papás? 💌",null,420);
   await sleep(200);
 
   const v=await elegir([
@@ -577,51 +836,7 @@ async function guion(){
   }
 
   await guardarMensaje();
-  await sleep(700);
-
-  /* ══ FASE 2: EL GIRO ══ */
-  // Aquí el tipeo "humano" vuelve → contraste total con el bot
-  await ellos(`${fn}... un momento.`,null,1400);
-  await sleep(350);
-  await ellos("Hay algo que tenemos que confesarte sobre esta invitación.",null,2100);
-  await sleep(700);
-  await ellos("El evento no existe. 😅",null,1300);
-  await sleep(400);
-  await ellos("No hay ningún evento para esa fecha.",null,1500);
   await sleep(600);
-  await ellos("La mandamos porque teníamos que darte una noticia",null,1700);
-  await sleep(500);
-  await ellos("Y no se nos ocurrió otra manera de decírtela 🙈",null,1500);
-  await sleep(1500);
-
-  /* Pausa dramática larga */
-  setEstado("escribiendo…");
-  const tR=document.createElement("div");tR.className="typing";tR.innerHTML="<i></i><i></i><i></i>";
-  M.appendChild(tR);scroll();
-  await sleep(3700);
-  tR.remove();setEstado("en línea");
-
-  /* ══ THE REVEAL ══ */
-  burbuja(
-    `<span style="display:block;font-size:2.8rem;margin-bottom:14px">🤰💛👶</span>`+
-    `<div style="font-family:'Fredoka',sans-serif;font-size:1.35rem;font-weight:700;letter-spacing:.02em">¡¡VAMOS A SER PAPÁS!!</div>`+
-    `<div style="font-size:.94rem;color:rgba(255,255,255,.82);margin-top:9px">Un bebé está en camino ✨</div>`,
-    "ellos","revelacion"
-  );
-
-  sndReveal();
-  await sleep(350);
-  confetear(150);
-  const burst=$("pow-burst");burst.classList.add("pop");setTimeout(()=>burst.classList.remove("pop"),800);
-  if(navigator.vibrate)navigator.vibrate([80,50,160,50,100]);
-
-  await sleep(1200);
-  await ellos(`El bebé llega para el <b>1° de Mayo del 2027</b> 🌟`,null,1500);
-  await sleep(350);
-  await ellos("Ya tenemos 12 semanas... ¡y todavía no lo podemos creer! 🥹",null,2000);
-  await sleep(600);
-  await ellos(`¡Gracias por ser parte de este momento, ${fn}! 💛`,null,1600);
-  await sleep(400);
 
   await elegir([{label:"💛 Ver el anuncio completo",v:"go",p:true,m:true,s:true}]);
   revelarAnuncio();
@@ -629,7 +844,14 @@ async function guion(){
 
 /* ─ GUARDAR ─ */
 async function guardarMensaje(){
-  const reg={nombre:YO.nombre,mensaje:YO.reaccion,asiste:YO.asiste,ts:new Date().toISOString(),evento:"bebe-2027"};
+  const reg={
+    nombre:YO.nombre,
+    mensaje:YO.reaccion,
+    reaccion_emoji:YO.reaccion_emoji,
+    asiste:YO.asiste,
+    ts:new Date().toISOString(),
+    evento:"bebe-2027"
+  };
   try{const l=JSON.parse(localStorage.getItem("bebe-mensajes")||"[]");l.push(reg);localStorage.setItem("bebe-mensajes",JSON.stringify(l))}catch(e){}
   if(CFG.supabaseUrl&&CFG.supabaseKey){
     try{await fetch(`${CFG.supabaseUrl}/rest/v1/${CFG.supabaseTable}`,{method:"POST",headers:{"Content-Type":"application/json","apikey":CFG.supabaseKey,"Authorization":`Bearer ${CFG.supabaseKey}`,"Prefer":"return=minimal"},body:JSON.stringify(reg)})}catch(e){}
@@ -664,7 +886,6 @@ function revelarAnuncio(){
 
 /* ─ PREPARAR ANUNCIO ─ */
 function prepararAnuncio(){
-  // Ecografía
   const eco=$("eco-contenido");
   if(CFG.ecoFoto){
     eco.innerHTML=`<img src="${CFG.ecoFoto}" class="eco-img" alt="Ecografía de nuestro bebé">`;
@@ -672,7 +893,6 @@ function prepararAnuncio(){
     eco.innerHTML=`<div class="eco-placeholder"><div class="eco-heart">💛</div><div class="eco-label">Primera foto • Próximamente</div></div>`;
   }
 
-  // Tu mensajito
   const fn=YO.nombre.trim().split(" ")[0]||"";
   if(YO.reaccion){
     $("seccion-tu-msg").style.display="block";
@@ -680,14 +900,14 @@ function prepararAnuncio(){
     $("tu-msg-firma").textContent=`— ${YO.nombre}`;
   }
 
-  // WA
   const waTxt=encodeURIComponent(`¡No puedo creerlo! ¡¡FELICITACIONES!! 🤰💛👶 ¡Qué noticia más linda!`);
+  const emojiDisplay = YO.reaccion_emoji ? `<div style="font-size:2.6rem;margin-bottom:6px">${YO.reaccion_emoji.split(' ')[0]}</div>` : `<div style="font-size:2.4rem;margin-bottom:8px">🥹💛</div>`;
   const box=$("reaccion-box");
   box.innerHTML=`
-    <p style="font-size:2.4rem;margin-bottom:8px">🥹💛</p>
+    ${emojiDisplay}
     ${fn?`<div class="rsvp-nombre">${fn}</div>`:""}
     <p style="font-family:'Fredoka',sans-serif;font-size:.95rem;color:rgba(255,255,255,.6);line-height:1.6;margin-bottom:12px">
-      ${YO.reaccion?"¡Gracias por las palabras! Las van a atesorar 🥹":"¿Querés felicitarlos?"}
+      ${YO.reaccion?"¡Gracias por las palabras! Las van a atesorar 🥹":"¿Querés felicitarlos directamente?"}
     </p>
     <button class="wa-btn" onclick="window.open('https://wa.me/${CFG.wa}?text=${waTxt}','_blank')">💛 Felicitarlos por WhatsApp</button>
   `;
@@ -736,12 +956,12 @@ function initRevealsSections(){
 
 /* ─ CACHÉ ─ */
 const CK="beti-angel-bebe-2027";
-function guardarPase(){try{localStorage.setItem(CK,JSON.stringify({nombre:YO.nombre,reaccion:YO.reaccion,asiste:YO.asiste,ts:Date.now()}))}catch(e){}}
+function guardarPase(){try{localStorage.setItem(CK,JSON.stringify({nombre:YO.nombre,reaccion:YO.reaccion,reaccion_emoji:YO.reaccion_emoji,asiste:YO.asiste,ts:Date.now()}))}catch(e){}}
 function leerPase(){try{return JSON.parse(localStorage.getItem(CK)||"null")}catch(e){return null}}
 function borrarPase(){try{localStorage.removeItem(CK)}catch(e){}}
 
 function irDirecto(p){
-  YO.nombre=p.nombre||"";YO.reaccion=p.reaccion||"";YO.asiste=p.asiste;
+  YO.nombre=p.nombre||"";YO.reaccion=p.reaccion||"";YO.reaccion_emoji=p.reaccion_emoji||"";YO.asiste=p.asiste;
   $("notif").classList.add("closed");$("app").style.display="none";
   document.body.classList.add("modo-anuncio");
   prepararAnuncio();iniciarBgCanvas();iniciarCountdown();
@@ -756,7 +976,7 @@ function volverAlChat(){
     $("app").style.display="flex";$("mensajes").innerHTML="";
     $("opciones").innerHTML="<div class=\"vacia\">preparando tu invitación...</div>";
     $("form-inline").style.display="none";
-    YO.nombre="";YO.reaccion="";YO.asiste=null;revelado=false;
+    YO.nombre="";YO.reaccion="";YO.reaccion_emoji="";YO.asiste=null;revelado=false;
     borrarPase();scrollTo(0,0);setEstado("para un momento especial");
     setTimeout(guion,300);
   },350);
