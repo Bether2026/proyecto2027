@@ -260,6 +260,7 @@ footer a:hover{color:var(--gold)}
       <div class="ch-nombre">Invitación especial</div>
       <div class="ch-estado" id="ch-estado">para un momento especial</div>
     </div>
+    <button id="btn-mus" onclick="toggleMusica()" aria-label="Música" style="width:40px;height:40px;border-radius:50%;border:1px solid rgba(233,196,106,.3);background:rgba(233,196,106,.08);color:#E9C46A;font-size:1.1rem;cursor:pointer;display:grid;place-items:center">♪</button>
   </div>
   <div id="mensajes"></div>
   <div id="barra">
@@ -439,7 +440,8 @@ async function corazonLatiendo(durMs){
   const ov=$("latido");H.cv=$("heart-cv");H.ctx=H.cv.getContext("2d");heartSize();addEventListener("resize",heartSize);
   H.beats=[];H.parts=[];H.rings=[];H.ecg=[];H.grow=0;H.done=false;
   $("lt-top").style.opacity=1;$("lt-bot").style.opacity=1;$("lt-reveal").classList.remove("on");
-  ov.classList.add("on");sndPad();
+  ov.classList.add("on");sndPad();musicaVol(0,1.2);
+  vibrar([300,120,80,80,80]);
   await sleep(900);
   const iv=60/CFG.bpm, n=Math.floor(durMs/1000/iv);
   try{ensureCtx();const T=actx.currentTime+.05;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
@@ -447,7 +449,7 @@ async function corazonLatiendo(durMs){
   for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
   let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60);
   let lastBeat=-1;
-  if(navigator.vibrate){const pat=[];for(let i=0;i<n;i++)pat.push(40,70,30,iv*1000-140);navigator.vibrate(pat)}
+  {const pat=[];for(let i=0;i<n;i++)pat.push(70,40,50,Math.max(20,iv*1000-160));vibrar(pat)}
   const loop=now=>{
     const c=H.ctx,W=H.cv.width,Hh=H.cv.height,dpr=devicePixelRatio,el=now-H.t0;
     c.clearRect(0,0,W,Hh);
@@ -488,7 +490,7 @@ async function corazonLatiendo(durMs){
   await new Promise(res=>{const st=()=>{H.grow=Math.min(1,(performance.now()-g0)/1100);H.grow<1?requestAnimationFrame(st):res()};st()});
   sndBoom();
   const fl=$("flash");fl.style.transition="opacity .06s";fl.style.opacity=1;
-  if(navigator.vibrate)navigator.vibrate([120,40,200]);
+  vibrar([400,60,200,60,120]);
   await sleep(140);
   H.done=true;cancelAnimationFrame(H.raf);H.ctx.clearRect(0,0,H.cv.width,H.cv.height);
   $("latido").style.background="radial-gradient(70% 50% at 50% 45%,rgba(233,196,106,.16),transparent 70%),radial-gradient(60% 40% at 50% 100%,rgba(224,70,90,.18),transparent 70%),#07050C";
@@ -500,7 +502,34 @@ async function corazonLatiendo(durMs){
   return new Promise(res=>{H.cerrar=res;H.auto=setTimeout(cerrarLatido,7000)});
 }
 function splitChars(el){if(el.dataset.s)return;el.dataset.s=1;const t=el.textContent;el.innerHTML="";[...t].forEach((ch,i)=>{const s=document.createElement("span");s.className="ltr-ch";s.textContent=ch;s.style.transitionDelay=(.35+i*.09)+"s";el.appendChild(s)})}
-function cerrarLatido(){if(!H.cerrar)return;clearTimeout(H.auto);const r=H.cerrar;H.cerrar=null;const ov=$("latido");ov.classList.remove("on");setTimeout(()=>{ov.style.background="";$("lt-reveal").classList.remove("on")},900);r()}
+function cerrarLatido(){if(!H.cerrar)return;clearTimeout(H.auto);musicaVol(1,3);const r=H.cerrar;H.cerrar=null;const ov=$("latido");ov.classList.remove("on");setTimeout(()=>{ov.style.background="";$("lt-reveal").classList.remove("on")},900);r()}
+
+/* ─ VIBRACIÓN ─ */
+function vibrar(p){try{if(navigator.vibrate){navigator.vibrate(0);navigator.vibrate(p)}}catch(e){}}
+
+/* ─ MÚSICA DE FONDO (suave, generativa) ─ */
+const MUS={on:false,muted:false,master:null,timer:0,next:0,step:0};
+const ACORDES=[[261.63,329.63,392,493.88],[220,261.63,329.63,392],[174.61,220,261.63,329.63],[196,246.94,293.66,392]];
+const MELO=[[784,659.25,523.25,659.25],[659.25,523.25,440,523.25],[698.46,587.33,523.25,440],[587.33,493.88,392,493.88]];
+function musicaStart(){
+  try{ensureCtx();if(MUS.on)return;MUS.on=true;
+    MUS.master=actx.createGain();MUS.master.gain.setValueAtTime(0,actx.currentTime);MUS.master.gain.linearRampToValueAtTime(MUS.muted?0:1,actx.currentTime+3);
+    const lp=actx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=2400;MUS.master.connect(lp);lp.connect(actx.destination);
+    const dl=actx.createDelay();dl.delayTime.value=.42;const fb=actx.createGain();fb.gain.value=.32;dl.connect(fb);fb.connect(dl);dl.connect(lp);MUS.delay=dl;
+    MUS.next=actx.currentTime+.1;MUS.step=0;MUS.timer=setInterval(musicaTick,200);musicaTick();
+  }catch(e){}
+}
+function musicaTick(){
+  const bar=4.8;
+  while(MUS.next<actx.currentTime+1.2){
+    const t=MUS.next,ci=MUS.step%4,ch=ACORDES[ci];
+    ch.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=i===0?"triangle":"sine";o.frequency.value=i===0?f/2:f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(i===0?.035:.018,t+1.4);g.gain.linearRampToValueAtTime(0,t+bar+.6);o.connect(g);g.connect(MUS.master);o.start(t);o.stop(t+bar+.7)});
+    MELO[ci].forEach((f,i)=>{if(Math.random()<.18)return;const tt=t+i*(bar/4)+.3,o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,tt);g.gain.linearRampToValueAtTime(.03,tt+.01);g.gain.exponentialRampToValueAtTime(.0008,tt+1.6);o.connect(g);g.connect(MUS.master);g.connect(MUS.delay);o.start(tt);o.stop(tt+1.7)});
+    MUS.next+=bar;MUS.step++;
+  }
+}
+function musicaVol(v,sec){try{if(!MUS.master)return;const T=actx.currentTime,g=MUS.master.gain;g.cancelScheduledValues(T);g.setValueAtTime(g.value,T);g.linearRampToValueAtTime(MUS.muted?0:v,T+(sec||1))}catch(e){}}
+function toggleMusica(){MUS.muted=!MUS.muted;musicaVol(1,.5);const b=$("btn-mus");if(b)b.textContent=MUS.muted?"♪̸":"♪";b.style.opacity=MUS.muted?.45:1}
 
 /* ─ CONFETTI ─ */
 const cv=$("ccv"),cx=cv.getContext("2d");let CW,CH,confs=[];
@@ -681,9 +710,9 @@ function volverAlChat(){
   const b=$("btn-volver");b.style.opacity="0";b.style.transform="translateY(10px)";
   setTimeout(()=>{document.body.classList.remove("modo-anuncio");const app=$("app");app.classList.remove("fuera","tiembla");app.style.display="flex";
     $("opciones").innerHTML='<div class="vacia">preparando tu invitación…</div>';$("form-inline").style.display="none";
-    Object.assign(YO,{nombre:"",reaccion:"",reaccion_emoji:"",asiste:null});revelado=false;borrarPase();scrollTo(0,0);setEstado("para un momento especial");ensureCtx();setTimeout(guion,300)},350);
+    Object.assign(YO,{nombre:"",reaccion:"",reaccion_emoji:"",asiste:null});revelado=false;borrarPase();scrollTo(0,0);setEstado("para un momento especial");ensureCtx();musicaStart();musicaVol(1,2);setTimeout(guion,300)},350);
 }
-function abrirChat(){ensureCtx();$("notif").classList.add("closed");setTimeout(guion,400)}
+function abrirChat(){ensureCtx();musicaStart();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
 (function init(){const p=leerPase();if(p&&p.nombre)irDirecto(p)})();
 </script>
 </body>
