@@ -359,7 +359,7 @@ footer a:hover{color:var(--gold)}
       <div class="container">
         <div class="sec-lbl"><span class="n">v.</span><span class="t">De los papás</span></div>
         <div class="card carta">
-          <div class="q">“</div>
+          <div class="q">"</div>
           <p class="carta-txt">Todavía no lo podemos creer del todo. Estamos felices, asustados y llenos de amor. Este bebé nos eligió a nosotros, y nosotros le decimos que sí con todo el corazón.</p>
           <div class="carta-firma">Betiana &amp; Ángel</div>
         </div>
@@ -415,101 +415,51 @@ function setEstado(t){$("ch-estado").textContent=t}
 /* ─ AUDIO ─ */
 let actx=null;
 function ensureCtx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==="suspended")actx.resume();return actx}
-function pop(f,v,t){try{ensureCtx();const T=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type=t||"sine";o.frequency.setValueAtTime(f,T);g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtTime(.0001,T+.18);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+.2)}catch(e){}}
-const sndR=()=>pop(540,.07),sndE=()=>pop(760,.06);
+function pop(f,v,t){try{ensureCtx();const T=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type=t||"sine";o.frequency.setValueAtTime(f,T);g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtValue(.0001,T+.18);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+.2)}catch(e){}}
+
+/* workaround: alias correcto */
+function pop2(f,v){try{ensureCtx();const T=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(f,T);g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtTime(.0001,T+.18);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+.2)}catch(e){}}
+const sndR=()=>pop2(540,.07),sndE=()=>pop2(760,.06);
+
 function arpegio(fs,step,dur,type,vol){try{ensureCtx();const T=actx.currentTime;fs.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain(),t=T+i*step;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+dur+.05)})}catch(e){}}
 const sndMagico=()=>arpegio([660,880,1100,1320,1760],.1,.9,"sine",.09);
 const sndReveal=()=>arpegio([392,523,659,784,1047,1319,1568,2093],.09,1.8,"triangle",.1);
 function sndPad(){try{ensureCtx();const T=actx.currentTime;[261.6,329.6,392,523.2].forEach(f=>{const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(.05,T+.6);g.gain.exponentialRampToValueAtTime(.001,T+5);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+5.1)})}catch(e){}}
 function thump(t,gain,decay){
-  const o=actx.createOscillator(),g=actx.createGain();
-  o.type="sine";o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(38,t+decay);
-  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+decay);
-  o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+decay+.02);
-  const buf=actx.createBuffer(1,actx.sampleRate*.1,actx.sampleRate),d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.4);
-  const s=actx.createBufferSource();s.buffer=buf;const bf=actx.createBiquadFilter();bf.type="bandpass";bf.frequency.value=70;bf.Q.value=1.2;
-  const gn=actx.createGain();gn.gain.setValueAtTime(gain*.9,t);gn.gain.exponentialRampToValueAtTime(.001,t+decay);
-  s.connect(bf);bf.connect(gn);gn.connect(actx.destination);s.start(t);
+  try{
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type="sine";o.frequency.setValueAtTime(95,t);o.frequency.exponentialRampToValueAtTime(38,t+decay);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(gain,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+decay);
+    o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+decay+.02);
+    const buf=actx.createBuffer(1,actx.sampleRate*.1,actx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.4);
+    const s=actx.createBufferSource();s.buffer=buf;const bf=actx.createBiquadFilter();bf.type="bandpass";bf.frequency.value=70;bf.Q.value=1.2;
+    const gn=actx.createGain();gn.gain.setValueAtTime(gain*.9,t);gn.gain.exponentialRampToValueAtTime(.001,t+decay);
+    s.connect(bf);bf.connect(gn);gn.connect(actx.destination);s.start(t);
+  }catch(e){}
 }
 function sndBoom(){try{ensureCtx();const T=actx.currentTime;thump(T,.9,.9);const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(60,T);o.frequency.exponentialRampToValueAtTime(22,T+1.2);g.gain.setValueAtTime(.6,T);g.gain.exponentialRampToValueAtTime(.001,T+1.2);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+1.25)}catch(e){}}
 
-/* ─ CORAZÓN EN PRIMER PLANO ─ */
-const H={cv:null,ctx:null,raf:0,t0:0,beats:[],parts:[],rings:[],ecg:[],grow:0,done:false};
-function heartPath(c,s){c.beginPath();for(let i=0;i<=120;i++){const t=i/120*Math.PI*2;const x=16*Math.pow(Math.sin(t),3);const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));i?c.lineTo(x*s,y*s):c.moveTo(x*s,y*s)}c.closePath()}
-function heartSize(){H.cv.width=innerWidth*devicePixelRatio;H.cv.height=innerHeight*devicePixelRatio}
-async function corazonLatiendo(durMs){
-  const ov=$("latido");H.cv=$("heart-cv");H.ctx=H.cv.getContext("2d");heartSize();addEventListener("resize",heartSize);
-  H.beats=[];H.parts=[];H.rings=[];H.ecg=[];H.grow=0;H.done=false;
-  $("lt-top").style.opacity=1;$("lt-bot").style.opacity=1;$("lt-reveal").classList.remove("on");
-  ov.classList.add("on");sndPad();musicaVol(0,1.2);
-  vibrar([300,120,80,80,80]);
-  await sleep(900);
-  const iv=60/CFG.bpm, n=Math.floor(durMs/1000/iv);
-  try{ensureCtx();const T=actx.currentTime+.05;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
-  H.t0=performance.now()+50;
-  for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
-  let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60);
-  let lastBeat=-1;
-  {const pat=[];for(let i=0;i<n;i++)pat.push(70,40,50,Math.max(20,iv*1000-160));vibrar(pat)}
-  const loop=now=>{
-    const c=H.ctx,W=H.cv.width,Hh=H.cv.height,dpr=devicePixelRatio,el=now-H.t0;
-    c.clearRect(0,0,W,Hh);
-    let env=0;
-    H.beats.forEach((b,i)=>{const d1=(el-b)/1000,d2=(el-b-110)/1000;if(d1>0)env+=Math.exp(-d1*14)*1;if(d2>0)env+=Math.exp(-d2*16)*.55;if(d1>0&&i>lastBeat){lastBeat=i;H.rings.push({r:0,a:.9});for(let k=0;k<14;k++){const ang=rnd(0,Math.PI*2),sp=rnd(1.5,5);H.parts.push({x:0,y:0,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,l:1,s:rnd(1,3)})}}});
-    const cx=W/2,cy=Hh*.48,base=Math.min(W,Hh)/ (dpr*44)*dpr;
-    const sc=base*(1+env*.16)*(1+H.grow*H.grow*14);
-    // halo
-    const hg=c.createRadialGradient(cx,cy,0,cx,cy,sc*34);
-    hg.addColorStop(0,`rgba(255,70,95,${.22+env*.25})`);hg.addColorStop(1,"rgba(255,70,95,0)");
-    c.fillStyle=hg;c.fillRect(0,0,W,Hh);
-    // rings
-    H.rings.forEach(r=>{r.r+=dpr*4.2;r.a*=.965;c.save();c.translate(cx,cy);c.globalAlpha=r.a*.6;c.strokeStyle="#FF7A8C";c.lineWidth=1.5*dpr;heartPath(c,base*(1+r.r/(base*18)));c.stroke();c.restore()});
-    H.rings=H.rings.filter(r=>r.a>.02);
-    // particles
-    H.parts.forEach(p=>{p.x+=p.vx*dpr;p.y+=p.vy*dpr;p.vx*=.97;p.vy*=.97;p.l-=.012;c.globalAlpha=Math.max(0,p.l);c.fillStyle=Math.random()>.5?"#FFD0A0":"#FF6F86";c.beginPath();c.arc(cx+p.x*base*.25,cy+p.y*base*.25,p.s*dpr,0,7);c.fill()});
-    H.parts=H.parts.filter(p=>p.l>0);c.globalAlpha=1;
-    // heart
-    c.save();c.translate(cx,cy);
-    c.shadowColor=`rgba(255,60,90,${.7+env*.3})`;c.shadowBlur=(40+env*60)*dpr;
-    const g=c.createRadialGradient(-sc*5,-sc*6,sc,0,0,sc*19);
-    g.addColorStop(0,H.grow>.4?"#FFF2E6":"#FF9AA8");g.addColorStop(.45,"#E8304E");g.addColorStop(1,"#6E0A20");
-    c.fillStyle=g;heartPath(c,sc);c.fill();
-    c.shadowBlur=0;c.globalAlpha=.35;c.strokeStyle="#FFD3C8";c.lineWidth=1*dpr;c.stroke();
-    if(H.grow>0){c.globalAlpha=Math.min(1,H.grow*1.6);c.fillStyle="#FFF4E6";heartPath(c,sc);c.fill()}
-    c.restore();c.globalAlpha=1;
-    // ECG
-    const ey=Hh*.8,ew=W;H.ecg.push(env);if(H.ecg.length>220)H.ecg.shift();
-    c.beginPath();H.ecg.forEach((v,i)=>{const x=W-(H.ecg.length-i)*(ew/220);const spike=v>.6?-(v*46):v*8;const y=ey+spike*dpr*(i%2?1:-.35);i?c.lineTo(x,y):c.moveTo(x,y)});
-    c.strokeStyle="rgba(255,120,140,.75)";c.lineWidth=1.6*dpr;c.shadowColor="#FF5A75";c.shadowBlur=10*dpr;c.stroke();c.shadowBlur=0;
-    if(!H.done)H.raf=requestAnimationFrame(loop);
+/* ─ VIBRACIÓN AL RITMO DEL LATIDO ─
+   En lugar de un array gigante (que los dispositivos cortan),
+   usamos setTimeout recursivo: cada latido dispara vibrate([lub, gap, dub]).
+   Se inicia con el mismo offset de 50 ms que el audio (actx.currentTime+.05).
+*/
+function vibrarRitmo(durMs){
+  if(!navigator.vibrate)return;
+  const beatMs=60/CFG.bpm*1000; // ≈ 422 ms por latido
+  let elapsed=0;
+  const tick=()=>{
+    if(elapsed>=durMs)return;
+    try{navigator.vibrate(0);navigator.vibrate([62,72,40])}catch(e){}
+    elapsed+=beatMs;
+    setTimeout(tick,beatMs);
   };
-  H.raf=requestAnimationFrame(loop);
-  await sleep(n*iv*1000+250);
-  // crecimiento final
-  $("lt-top").style.opacity=0;$("lt-bot").style.opacity=0;
-  const g0=performance.now();
-  await new Promise(res=>{const st=()=>{H.grow=Math.min(1,(performance.now()-g0)/1100);H.grow<1?requestAnimationFrame(st):res()};st()});
-  sndBoom();
-  const fl=$("flash");fl.style.transition="opacity .06s";fl.style.opacity=1;
-  vibrar([400,60,200,60,120]);
-  await sleep(140);
-  H.done=true;cancelAnimationFrame(H.raf);H.ctx.clearRect(0,0,H.cv.width,H.cv.height);
-  $("latido").style.background="radial-gradient(70% 50% at 50% 45%,rgba(233,196,106,.16),transparent 70%),radial-gradient(60% 40% at 50% 100%,rgba(224,70,90,.18),transparent 70%),#07050C";
-  fl.style.transition="opacity 1.1s";fl.style.opacity=0;
-  splitChars($("ltr-big"));
-  $("lt-reveal").classList.add("on");
-  sndReveal();confetear(220,true);
-  setTimeout(()=>confetear(120,true),900);
-  return new Promise(res=>{H.cerrar=res;H.auto=setTimeout(cerrarLatido,7000)});
+  setTimeout(tick,50); // sincronizado con el primer thump
 }
-function splitChars(el){if(el.dataset.s)return;el.dataset.s=1;const t=el.textContent;el.innerHTML="";[...t].forEach((ch,i)=>{const s=document.createElement("span");s.className="ltr-ch";s.textContent=ch;s.style.transitionDelay=(.35+i*.09)+"s";el.appendChild(s)})}
-function cerrarLatido(){if(!H.cerrar)return;clearTimeout(H.auto);musicaVol(1,3);const r=H.cerrar;H.cerrar=null;const ov=$("latido");ov.classList.remove("on");setTimeout(()=>{ov.style.background="";$("lt-reveal").classList.remove("on")},900);r()}
-
-/* ─ VIBRACIÓN ─ */
 function vibrar(p){try{if(navigator.vibrate){navigator.vibrate(0);navigator.vibrate(p)}}catch(e){}}
 
-/* ─ MÚSICA DE FONDO (suave, generativa) ─ */
+/* ─ MÚSICA DE FONDO — arranca en la fase 2, no en el chat ─ */
 const MUS={on:false,muted:false,master:null,timer:0,next:0,step:0};
 const ACORDES=[[261.63,329.63,392,493.88],[220,261.63,329.63,392],[174.61,220,261.63,329.63],[196,246.94,293.66,392]];
 const MELO=[[784,659.25,523.25,659.25],[659.25,523.25,440,523.25],[698.46,587.33,523.25,440],[587.33,493.88,392,493.88]];
@@ -532,6 +482,74 @@ function musicaTick(){
 }
 function musicaVol(v,sec){try{if(!MUS.master)return;const T=actx.currentTime,g=MUS.master.gain;g.cancelScheduledValues(T);g.setValueAtTime(g.value,T);g.linearRampToValueAtTime(MUS.muted?0:v,T+(sec||1))}catch(e){}}
 function toggleMusica(){MUS.muted=!MUS.muted;musicaVol(1,.5);const b=$("btn-mus");if(b)b.textContent=MUS.muted?"♪̸":"♪";b.style.opacity=MUS.muted?.45:1}
+
+/* ─ CORAZÓN EN PRIMER PLANO ─ */
+const H={cv:null,ctx:null,raf:0,t0:0,beats:[],parts:[],rings:[],ecg:[],grow:0,done:false};
+function heartPath(c,s){c.beginPath();for(let i=0;i<=120;i++){const t=i/120*Math.PI*2;const x=16*Math.pow(Math.sin(t),3);const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));i?c.lineTo(x*s,y*s):c.moveTo(x*s,y*s)}c.closePath()}
+function heartSize(){H.cv.width=innerWidth*devicePixelRatio;H.cv.height=innerHeight*devicePixelRatio}
+async function corazonLatiendo(durMs){
+  const ov=$("latido");H.cv=$("heart-cv");H.ctx=H.cv.getContext("2d");heartSize();addEventListener("resize",heartSize);
+  H.beats=[];H.parts=[];H.rings=[];H.ecg=[];H.grow=0;H.done=false;
+  $("lt-top").style.opacity=1;$("lt-bot").style.opacity=1;$("lt-reveal").classList.remove("on");
+  ov.classList.add("on");sndPad();musicaVol(0,1.2);
+  await sleep(900);
+  const iv=60/CFG.bpm, n=Math.floor(durMs/1000/iv);
+  try{ensureCtx();const T=actx.currentTime+.05;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
+  H.t0=performance.now()+50;
+  for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
+  let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60);
+
+  /* vibración sincronizada al ritmo: setTimeout recursivo ≡ cada latido */
+  vibrarRitmo(durMs);
+
+  let lastBeat=-1;
+  const loop=now=>{
+    const c=H.ctx,W=H.cv.width,Hh=H.cv.height,dpr=devicePixelRatio,el=now-H.t0;
+    c.clearRect(0,0,W,Hh);
+    let env=0;
+    H.beats.forEach((b,i)=>{const d1=(el-b)/1000,d2=(el-b-110)/1000;if(d1>0)env+=Math.exp(-d1*14)*1;if(d2>0)env+=Math.exp(-d2*16)*.55;if(d1>0&&i>lastBeat){lastBeat=i;H.rings.push({r:0,a:.9});for(let k=0;k<14;k++){const ang=rnd(0,Math.PI*2),sp=rnd(1.5,5);H.parts.push({x:0,y:0,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,l:1,s:rnd(1,3)})}}});
+    const cx=W/2,cy=Hh*.48,base=Math.min(W,Hh)/ (dpr*44)*dpr;
+    const sc=base*(1+env*.16)*(1+H.grow*H.grow*14);
+    const hg=c.createRadialGradient(cx,cy,0,cx,cy,sc*34);
+    hg.addColorStop(0,`rgba(255,70,95,${.22+env*.25})`);hg.addColorStop(1,"rgba(255,70,95,0)");
+    c.fillStyle=hg;c.fillRect(0,0,W,Hh);
+    H.rings.forEach(r=>{r.r+=dpr*4.2;r.a*=.965;c.save();c.translate(cx,cy);c.globalAlpha=r.a*.6;c.strokeStyle="#FF7A8C";c.lineWidth=1.5*dpr;heartPath(c,base*(1+r.r/(base*18)));c.stroke();c.restore()});
+    H.rings=H.rings.filter(r=>r.a>.02);
+    H.parts.forEach(p=>{p.x+=p.vx*dpr;p.y+=p.vy*dpr;p.vx*=.97;p.vy*=.97;p.l-=.012;c.globalAlpha=Math.max(0,p.l);c.fillStyle=Math.random()>.5?"#FFD0A0":"#FF6F86";c.beginPath();c.arc(cx+p.x*base*.25,cy+p.y*base*.25,p.s*dpr,0,7);c.fill()});
+    H.parts=H.parts.filter(p=>p.l>0);c.globalAlpha=1;
+    c.save();c.translate(cx,cy);
+    c.shadowColor=`rgba(255,60,90,${.7+env*.3})`;c.shadowBlur=(40+env*60)*dpr;
+    const g=c.createRadialGradient(-sc*5,-sc*6,sc,0,0,sc*19);
+    g.addColorStop(0,H.grow>.4?"#FFF2E6":"#FF9AA8");g.addColorStop(.45,"#E8304E");g.addColorStop(1,"#6E0A20");
+    c.fillStyle=g;heartPath(c,sc);c.fill();
+    c.shadowBlur=0;c.globalAlpha=.35;c.strokeStyle="#FFD3C8";c.lineWidth=1*dpr;c.stroke();
+    if(H.grow>0){c.globalAlpha=Math.min(1,H.grow*1.6);c.fillStyle="#FFF4E6";heartPath(c,sc);c.fill()}
+    c.restore();c.globalAlpha=1;
+    const ey=Hh*.8,ew=W;H.ecg.push(env);if(H.ecg.length>220)H.ecg.shift();
+    c.beginPath();H.ecg.forEach((v,i)=>{const x=W-(H.ecg.length-i)*(ew/220);const spike=v>.6?-(v*46):v*8;const y=ey+spike*dpr*(i%2?1:-.35);i?c.lineTo(x,y):c.moveTo(x,y)});
+    c.strokeStyle="rgba(255,120,140,.75)";c.lineWidth=1.6*dpr;c.shadowColor="#FF5A75";c.shadowBlur=10*dpr;c.stroke();c.shadowBlur=0;
+    if(!H.done)H.raf=requestAnimationFrame(loop);
+  };
+  H.raf=requestAnimationFrame(loop);
+  await sleep(n*iv*1000+250);
+  $("lt-top").style.opacity=0;$("lt-bot").style.opacity=0;
+  const g0=performance.now();
+  await new Promise(res=>{const st=()=>{H.grow=Math.min(1,(performance.now()-g0)/1100);H.grow<1?requestAnimationFrame(st):res()};st()});
+  sndBoom();
+  const fl=$("flash");fl.style.transition="opacity .06s";fl.style.opacity=1;
+  vibrar([400,60,200,60,120]);
+  await sleep(140);
+  H.done=true;cancelAnimationFrame(H.raf);H.ctx.clearRect(0,0,H.cv.width,H.cv.height);
+  $("latido").style.background="radial-gradient(70% 50% at 50% 45%,rgba(233,196,106,.16),transparent 70%),radial-gradient(60% 40% at 50% 100%,rgba(224,70,90,.18),transparent 70%),#07050C";
+  fl.style.transition="opacity 1.1s";fl.style.opacity=0;
+  splitChars($("ltr-big"));
+  $("lt-reveal").classList.add("on");
+  sndReveal();confetear(220,true);
+  setTimeout(()=>confetear(120,true),900);
+  return new Promise(res=>{H.cerrar=res;H.auto=setTimeout(cerrarLatido,7000)});
+}
+function splitChars(el){if(el.dataset.s)return;el.dataset.s=1;const t=el.textContent;el.innerHTML="";[...t].forEach((ch,i)=>{const s=document.createElement("span");s.className="ltr-ch";s.textContent=ch;s.style.transitionDelay=(.35+i*.09)+"s";el.appendChild(s)})}
+function cerrarLatido(){if(!H.cerrar)return;clearTimeout(H.auto);musicaVol(1,3);const r=H.cerrar;H.cerrar=null;const ov=$("latido");ov.classList.remove("on");setTimeout(()=>{ov.style.background="";$("lt-reveal").classList.remove("on")},900);r()}
 
 /* ─ CONFETTI ─ */
 const cv=$("ccv"),cx=cv.getContext("2d");let CW,CH,confs=[];
@@ -564,6 +582,8 @@ function formInline(campos,btn){return new Promise(res=>{$("opciones").innerHTML
 async function guion(){
   M.innerHTML='<div class="dia">Hoy</div>';
   await sleep(700);
+
+  /* ── FASE 1: CHAT NORMAL — sin música ── */
   await botMsg("¡Hola! 💌",null,400);
   await sleep(350);
   await botMsg("Alguien especial pensó en vos para compartir un momento muy importante ✨");
@@ -590,6 +610,9 @@ async function guion(){
   YO.asiste=asiste;
   await botMsg(asiste?"¡Genial! Va a ser un momento muy especial 🥳":"Ay, qué lástima 😢 Igual te mandamos todo el cariño",null,450);
   await sleep(900);
+
+  /* ── FASE 2: EL GIRO — la música arranca aquí ── */
+  musicaStart();
 
   await ellos(`${fn}…`,null,1100);
   await sleep(600);setEstado("en línea");await sleep(1100);
@@ -621,6 +644,8 @@ async function guion(){
   await sleep(700);
   await ellos(`¡Gracias por ser parte de este momento, ${fn}! 💛`,null,1600);
   await sleep(700);
+
+  /* ── FASE 3: REACCIÓN Y MENSAJE (después de la noticia) ── */
   await botMsg("¿Cuál fue tu primera reacción?",null,400);
   await sleep(200);
   YO.reaccion_emoji=await elegirReaccion();
@@ -632,7 +657,7 @@ async function guion(){
   if(v==="msg"){
     await botMsg("¡Dale! Lo van a leer ese día 🥹",null,350);
     const [msj]=await formInline([{ph:"Un abrazo, un deseo, lo que sientas…",req:true,max:200,area:true}],"Enviar →");
-    YO.reaccion=msj;yoDigo(`“${msj}”`);
+    YO.reaccion=msj;yoDigo(`"${msj}"`);
     await botMsg("¡Hermoso! Lo van a guardar para siempre 🥹",null,380);
   }
   await guardarMensaje();
@@ -648,7 +673,7 @@ async function guardarMensaje(){
   if(CFG.supabaseUrl&&CFG.supabaseKey){try{await fetch(`${CFG.supabaseUrl}/rest/v1/${CFG.supabaseTable}`,{method:"POST",headers:{"Content-Type":"application/json","apikey":CFG.supabaseKey,"Authorization":`Bearer ${CFG.supabaseKey}`,"Prefer":"return=minimal"},body:JSON.stringify(reg)})}catch(e){}}
 }
 
-/* ─ TRANSICIÓN ─ */
+/* ─ TRANSICIÓN AL ANUNCIO ─ */
 let revelado=false;
 function revelarAnuncio(){
   if(revelado)return;revelado=true;guardarPase();sndMagico();
@@ -669,7 +694,7 @@ function prepararAnuncio(){
   $("eco-contenido").innerHTML=CFG.ecoFoto?`<img src="${CFG.ecoFoto}" class="eco-img" alt="Ecografía de nuestro bebé">`:`<div class="eco-placeholder"><div class="eco-heart">♥</div><div class="eco-label">ecografía · próximamente</div></div>`;
   const bar=$("sem-bar");bar.innerHTML="";for(let i=0;i<40;i++){const s=document.createElement("i");if(i<12)s.className="f"+(i===11?" now":"");bar.appendChild(s)}
   const fn=YO.nombre.trim().split(" ")[0]||"";
-  if(YO.reaccion){$("seccion-tu-msg").style.display="block";$("tu-msg-display").textContent=`“${YO.reaccion}”`;$("tu-msg-firma").textContent=YO.nombre}
+  if(YO.reaccion){$("seccion-tu-msg").style.display="block";$("tu-msg-display").textContent=`"${YO.reaccion}"`;$("tu-msg-firma").textContent=YO.nombre}
   const waTxt=encodeURIComponent("¡No puedo creerlo! ¡¡FELICITACIONES!! 🤰💛👶 ¡Qué noticia más linda!");
   const em=YO.reaccion_emoji?YO.reaccion_emoji.split(" ")[0]:"🥹";
   $("reaccion-box").innerHTML=`<div class="fel-emoji">${em}</div>${fn?`<div class="rsvp-nombre">Gracias, ${fn}</div>`:""}
@@ -682,7 +707,7 @@ function iniciarCountdown(){const T=new Date(CFG.fechaISO).getTime(),p=n=>String
 /* ─ BG CANVAS ─ */
 let bgC=null,bgX=null,bgT=0,bgL=0,bgOn=false,bgS=[];
 function rbg(){if(bgC){bgC.width=innerWidth;bgC.height=innerHeight}}
-function mkS(){const W=bgC?.width||innerWidth,H=bgC?.height||innerHeight;return{x:Math.random()*W,y:Math.random()*H,r:.3+Math.random()*1.4,l:Math.random(),d:.002+Math.random()*.005,vy:-.05-Math.random()*.1,g:Math.random()>.6}}
+function mkS(){const W=bgC?.width||innerWidth,Hh=bgC?.height||innerHeight;return{x:Math.random()*W,y:Math.random()*Hh,r:.3+Math.random()*1.4,l:Math.random(),d:.002+Math.random()*.005,vy:-.05-Math.random()*.1,g:Math.random()>.6}}
 function iniciarBgCanvas(){if(bgOn)return;bgC=$("bg-canvas");bgX=bgC.getContext("2d");bgOn=true;rbg();addEventListener("resize",rbg);for(let i=0;i<110;i++)bgS.push(mkS());requestAnimationFrame(fbg)}
 function fbg(now=performance.now()){
   const dt=Math.min((now-bgL)/16.67,2.5);bgL=now;bgT+=dt;if(!bgOn)return;
@@ -710,14 +735,12 @@ function irDirecto(p){
 }
 function volverAlChat(){
   if(!document.body.classList.contains("modo-anuncio"))return;
-  borrarPase();location.reload();return;
-  const b=$("btn-volver");b.style.opacity="0";b.style.transform="translateY(10px)";
-  setTimeout(()=>{document.body.classList.remove("modo-anuncio");const app=$("app");app.classList.remove("fuera","tiembla");app.style.display="flex";
-    $("opciones").innerHTML='<div class="vacia">preparando tu invitación…</div>';$("form-inline").style.display="none";
-    Object.assign(YO,{nombre:"",reaccion:"",reaccion_emoji:"",asiste:null});revelado=false;borrarPase();scrollTo(0,0);setEstado("para un momento especial");ensureCtx();musicaStart();musicaVol(1,2);setTimeout(guion,300)},350);
+  borrarPase();location.reload();
 }
+
 let guionIniciado=false;
-function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();musicaStart();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
+/* Música NO arranca aquí — arranca en el guion, fase 2 */
+function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
 (function init(){const p=leerPase();if(p&&p.nombre)irDirecto(p)})();
 </script>
 </body>
