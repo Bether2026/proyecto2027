@@ -225,7 +225,9 @@ section.fs{position:relative;padding:72px 22px}
 .wa-btn{width:100%;min-height:58px;border:none;border-radius:999px;cursor:pointer;background:linear-gradient(135deg,#2BD873,#139A62);color:#04170d;font-family:var(--sans);font-size:.8rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;box-shadow:0 12px 36px rgba(43,216,115,.25);transition:transform .2s}
 .wa-btn:active{transform:scale(.97)}
 
-#btn-volver{position:fixed;bottom:max(env(safe-area-inset-bottom),18px);left:16px;z-index:50;background:rgba(14,10,22,.85);border:1px solid var(--line);color:var(--dim);font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:.75rem 1.2rem;border-radius:999px;cursor:pointer;backdrop-filter:blur(12px);transition:opacity .3s,transform .3s;opacity:0;transform:translateY(10px)}
+#btn-volver{position:fixed;bottom:max(env(safe-area-inset-bottom),18px);left:16px;z-index:50;background:rgba(14,10,22,.85);border:1px solid var(--line);color:var(--dim);font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:.75rem 1.2rem;border-radius:999px;cursor:pointer;backdrop-filter:blur(12px);transition:opacity .3s,transform .3s;opacity:0;transform:translateY(10px);visibility:hidden;pointer-events:none}
+body.modo-anuncio #btn-volver.show{visibility:visible;pointer-events:auto}
+html,body,#mensajes{overscroll-behavior:none}
 footer{text-align:center;padding:30px 20px 90px;position:relative;z-index:2}
 footer a{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:var(--faint)}
 footer a:hover{color:var(--gold)}
@@ -658,7 +660,7 @@ function revelarAnuncio(){
     prepararAnuncio();iniciarBgCanvas();iniciarCountdown();
     scrollTo(0,0);$("flash").style.transition="opacity .9s";$("flash").style.opacity=0;confetear(170,true);
     setTimeout(()=>initRevealsSections(),500);
-    setTimeout(()=>{const b=$("btn-volver");b.style.opacity="1";b.style.transform="none"},1200);
+    setTimeout(()=>{const b=$("btn-volver");b.classList.add("show");b.style.opacity="1";b.style.transform="none"},1200);
   },1250);
   setTimeout(()=>{app.style.display="none"},2100);
 }
@@ -704,15 +706,18 @@ function irDirecto(p){
   Object.assign(YO,{nombre:p.nombre||"",reaccion:p.reaccion||"",reaccion_emoji:p.reaccion_emoji||"",asiste:p.asiste});
   $("notif").classList.add("closed");$("app").style.display="none";document.body.classList.add("modo-anuncio");
   prepararAnuncio();iniciarBgCanvas();iniciarCountdown();scrollTo(0,0);setTimeout(()=>initRevealsSections(),400);
-  const b=$("btn-volver");b.style.opacity="1";b.style.transform="none";
+  const b=$("btn-volver");b.classList.add("show");b.style.opacity="1";b.style.transform="none";
 }
 function volverAlChat(){
+  if(!document.body.classList.contains("modo-anuncio"))return;
+  borrarPase();location.reload();return;
   const b=$("btn-volver");b.style.opacity="0";b.style.transform="translateY(10px)";
   setTimeout(()=>{document.body.classList.remove("modo-anuncio");const app=$("app");app.classList.remove("fuera","tiembla");app.style.display="flex";
     $("opciones").innerHTML='<div class="vacia">preparando tu invitación…</div>';$("form-inline").style.display="none";
     Object.assign(YO,{nombre:"",reaccion:"",reaccion_emoji:"",asiste:null});revelado=false;borrarPase();scrollTo(0,0);setEstado("para un momento especial");ensureCtx();musicaStart();musicaVol(1,2);setTimeout(guion,300)},350);
 }
-function abrirChat(){ensureCtx();musicaStart();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
+let guionIniciado=false;
+function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();musicaStart();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
 (function init(){const p=leerPase();if(p&&p.nombre)irDirecto(p)})();
 </script>
 </body>
