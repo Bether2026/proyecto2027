@@ -129,8 +129,6 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--gold-hi)}
 .lt-bpm{font-family:var(--serif);font-weight:300;font-size:clamp(3.4rem,16vw,4.6rem);line-height:1;color:var(--cream);font-variant-numeric:tabular-nums}
 .lt-bpm small{font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.3em;color:var(--rose);margin-left:6px;vertical-align:middle}
 .lt-cap{font-size:.78rem;color:var(--dim);letter-spacing:.06em;margin-top:8px}
-.lt-tap{position:absolute;left:0;right:0;bottom:max(env(safe-area-inset-bottom),12vh);text-align:center;z-index:2;font-family:var(--serif);font-style:italic;font-size:clamp(1.2rem,5vw,1.5rem);color:var(--cream);opacity:0;transition:opacity .6s;pointer-events:none}
-.lt-tap small{display:block;font-family:var(--sans);font-style:normal;font-size:.6rem;letter-spacing:.4em;text-transform:uppercase;color:var(--rose);margin-top:10px;animation:blink 1.6s ease-in-out infinite}
 #latido.esperando{cursor:pointer}
 #lt-reveal{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .8s}
 #lt-reveal.on{opacity:1;pointer-events:auto}
@@ -146,6 +144,16 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--gold-hi)}
 .ltr-ch{display:inline-block;opacity:0;transform:translateY(30px) scale(.8);filter:blur(10px);transition:opacity .9s cubic-bezier(.2,1,.3,1),transform .9s cubic-bezier(.2,1.3,.3,1),filter .9s}
 #lt-reveal.on .ltr-ch{opacity:1;transform:none;filter:none}
 
+#vibdiag{display:none;position:fixed;inset:0;z-index:400;overflow:auto;padding:24px 18px max(env(safe-area-inset-bottom),24px);background:#0B0812;color:#FBF6EE;font-family:var(--sans)}
+body.diag #vibdiag{display:block}
+#vibdiag h2{font-family:var(--serif);font-weight:400;font-size:1.7rem;color:var(--gold);margin-bottom:18px}
+.vd-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:.86rem}
+.vd-row span{color:var(--dim)}
+.vd-row b{font-weight:700;text-align:right}
+.vd-btn{width:100%;margin-top:12px;min-height:56px;border-radius:14px;border:1px solid var(--line);background:rgba(233,196,106,.1);color:var(--ink);font-family:var(--sans);font-size:.95rem;font-weight:600;cursor:pointer}
+.vd-btn:active{transform:scale(.98)}
+.vd-out{margin-top:18px;padding:14px;border-radius:12px;background:rgba(255,255,255,.05);font-family:ui-monospace,Menlo,monospace;font-size:.78rem;line-height:1.7;white-space:pre-wrap}
+.vd-ua{margin-top:14px;font-family:ui-monospace,Menlo,monospace;font-size:.62rem;color:var(--faint);word-break:break-all;line-height:1.5}
 #toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:rgba(14,10,22,.96);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:.75rem 1.4rem;font-size:.84rem;z-index:250;opacity:0;pointer-events:none;transition:all .4s;box-shadow:0 14px 40px rgba(0,0,0,.6);max-width:88vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -281,7 +289,6 @@ footer a:hover{color:var(--gold)}
     <div class="lt-pre">Escuchá</div>
     <div class="lt-tit">un corazón nuevo</div>
   </div>
-  <div class="lt-tap" id="lt-tap">Apoyá tu dedo sobre el corazón<small>tocá para escucharlo</small></div>
   <div class="lt-bot" id="lt-bot">
     <div class="lt-bpm"><span id="lt-n">0</span><small>LPM</small></div>
     <div class="lt-cap">y late por primera vez para vos</div>
@@ -391,6 +398,19 @@ footer a:hover{color:var(--gold)}
   </div>
 </div>
 
+<!-- PANEL DE DIAGNÓSTICO — se abre agregando ?vib al final de la URL -->
+<div id="vibdiag">
+  <h2>Diagnóstico de vibración</h2>
+  <div class="vd-row"><span>API navigator.vibrate</span><b id="vd-api">—</b></div>
+  <div class="vd-row"><span>Contexto seguro (https)</span><b id="vd-sec">—</b></div>
+  <div class="vd-row"><span>Navegador real / WebView</span><b id="vd-wv">—</b></div>
+  <div class="vd-row"><span>Sistema</span><b id="vd-os">—</b></div>
+  <button class="vd-btn" onclick="vdTest('corto')">1 · Vibrar 400 ms</button>
+  <button class="vd-btn" onclick="vdTest('triple')">2 · Tres golpes</button>
+  <button class="vd-btn" onclick="vdTest('corazon')">3 · Patrón del corazón (12 latidos)</button>
+  <div class="vd-out" id="vd-out">Tocá un botón y mirá si el teléfono vibra.</div>
+  <div class="vd-ua" id="vd-ua"></div>
+</div>
 <div id="toast" role="status"></div>
 <button id="btn-volver" onclick="volverAlChat()">↺ Ver de nuevo</button>
 
@@ -445,41 +465,79 @@ function thump(t,gain,decay){
 }
 function sndBoom(){try{ensureCtx();const T=actx.currentTime;thump(T,.9,.9);const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(60,T);o.frequency.exponentialRampToValueAtTime(22,T+1.2);g.gain.setValueAtTime(.6,T);g.gain.exponentialRampToValueAtTime(.001,T+1.2);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+1.25)}catch(e){}}
 
-/* ─ VIBRACIÓN / HÁPTICA AL RITMO DEL LATIDO ─
-   Se dispara DENTRO del toque del usuario (requisito de los navegadores).
-   Android: un único patrón con todos los latidos.
-   iPhone (iOS 18+): truco del switch nativo de Safari, un "tic" por golpe.
-*/
+/* ─────────────────────────────────────────────────────
+   VIBRACIÓN / HÁPTICA
+   Todo pasa por vibrarRaw(), que guarda el resultado real
+   de navigator.vibrate(). Si el teléfono no vibra, abrí la
+   página con ?vib al final de la URL: el panel dice por qué.
+───────────────────────────────────────────────────── */
 const ES_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const ES_WEBVIEW=/; wv\)/.test(navigator.userAgent)||/\b(FBAN|FBAV|Instagram|Line\/|MicroMessenger|GSA\/)/.test(navigator.userAgent);
+const VIB={api:typeof navigator.vibrate==="function",log:[],ok:null};
+
+function vibrarRaw(patron,etiqueta){
+  if(!VIB.api){VIB.log.push((etiqueta||"vib")+" -> API ausente");return false}
+  try{
+    const r=navigator.vibrate(patron);
+    VIB.log.push((etiqueta||"vib")+" -> navigator.vibrate() devolvio "+r);
+    if(r!==false)VIB.ok=true;
+    return r!==false;
+  }catch(e){VIB.log.push((etiqueta||"vib")+" -> excepcion: "+e.message);return false}
+}
+function vibrar(p){return vibrarRaw(p,"pulso")}
+
+/* Patrón del latido: [lub, pausa, dub, espera] repetido.
+   Una sola llamada con el patrón completo: es la forma que mejor
+   soportan los Android (muchas llamadas sueltas se pisan). */
+function patronLatido(n,beatMs){
+  const lub=120,gap=75,dub=85,resto=Math.max(60,beatMs-120-75-85);
+  const p=[];
+  for(let i=0;i<n;i++){p.push(lub,gap,dub);if(i<n-1)p.push(resto)}
+  return p;
+}
 const HAP={lbl:null};
 function hapticInit(){
-  if(HAP.lbl)return;
+  if(HAP.lbl||!ES_IOS)return;
   const inp=document.createElement("input");inp.type="checkbox";inp.id="hap-sw";inp.setAttribute("switch","");
-  inp.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
-  const l=document.createElement("label");l.htmlFor="hap-sw";l.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
+  inp.style.cssText="position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none";
+  const l=document.createElement("label");l.htmlFor="hap-sw";l.style.cssText="position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none";
   document.body.append(inp,l);HAP.lbl=l;
 }
 function hapticTap(){try{HAP.lbl&&HAP.lbl.click()}catch(e){}}
-function latidoHaptico(n,iv){
-  const beat=Math.round(iv*1000),lub=110,gap=80,dub=70;
-  if(navigator.vibrate&&!ES_IOS){
-    const p=[];for(let i=0;i<n;i++){p.push(lub,gap,dub);if(i<n-1)p.push(beat-lub-gap-dub)}
-    try{navigator.vibrate(p)}catch(e){}
-  }
+
+function latidoHaptico(n,beatMs){
   if(ES_IOS){
     hapticInit();
-    for(let i=0;i<n;i++){const t=i*beat;if(i===0)hapticTap();else setTimeout(hapticTap,t);setTimeout(hapticTap,t+110)}
+    for(let i=0;i<n;i++){const t=i*beatMs;setTimeout(hapticTap,t);setTimeout(hapticTap,t+120)}
+    return;
   }
+  vibrarRaw(patronLatido(n,beatMs),"latidos("+n+")");
 }
-function vibrar(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
-function esperarToque(onTap){
-  return new Promise(res=>{
-    const ov=$("latido"),tap=$("lt-tap");ov.classList.add("esperando");tap.style.opacity=1;
-    let done=false;
-    const go=()=>{if(done)return;done=true;ov.removeEventListener("click",go);ov.classList.remove("esperando");onTap();tap.style.opacity=0;res()};
-    ov.addEventListener("click",go);
-    setTimeout(go,12000);
-  });
+
+/* ─ PANEL DE DIAGNÓSTICO (?vib) ─ */
+function vdTest(cual){
+  const out=$("vd-out");
+  let p,nombre;
+  if(cual==="corto"){p=400;nombre="400 ms continuos"}
+  else if(cual==="triple"){p=[200,120,200,120,200];nombre="tres golpes"}
+  else{p=patronLatido(12,422);nombre="12 latidos (5 s)"}
+  VIB.log=[];
+  const r=vibrarRaw(p,nombre);
+  out.textContent=VIB.log.join("\n")+"\n\n"+(r
+    ? "La llamada fue ACEPTADA por el navegador.\nSi no sentiste nada, el bloqueo esta en el telefono:\n- modo silencio o No molestar\n- ahorro de bateria\n- vibracion del sistema desactivada\n- el motor de vibracion no responde"
+    : "La llamada fue RECHAZADA por el navegador.\nNo es el telefono: es el contexto en que se abre la pagina.");
+}
+function vdInit(){
+  const si="SI",no="NO";
+  $("vd-api").textContent=VIB.api?si:no+" - este navegador no la tiene";
+  $("vd-api").style.color=VIB.api?"#6EE7A8":"#FF7A8C";
+  $("vd-sec").textContent=isSecureContext?si:no+" (file:// o http)";
+  $("vd-sec").style.color=isSecureContext?"#6EE7A8":"#E9C46A";
+  $("vd-wv").textContent=ES_WEBVIEW?"WebView (navegador embebido)":"Navegador normal";
+  $("vd-wv").style.color=ES_WEBVIEW?"#FF7A8C":"#6EE7A8";
+  $("vd-os").textContent=ES_IOS?"iPhone / iPad - sin vibracion web":"Android u otro";
+  $("vd-os").style.color=ES_IOS?"#FF7A8C":"#6EE7A8";
+  $("vd-ua").textContent=navigator.userAgent;
 }
 
 /* ─ MÚSICA DE FONDO — arranca en la fase 2, no en el chat ─ */
@@ -545,14 +603,12 @@ async function corazonLatiendo(durMs){
     c.strokeStyle="rgba(255,120,140,.75)";c.lineWidth=1.6*dpr;c.shadowColor="#FF5A75";c.shadowBlur=10*dpr;c.stroke();c.shadowBlur=0;
     if(!H.done)H.raf=requestAnimationFrame(loop);
   };
-  H.t0=performance.now();
+  /* Arranca solo: audio, animacion y vibracion en el mismo instante */
+  latidoHaptico(n,Math.round(iv*1000));
+  try{ensureCtx();const T=actx.currentTime+.05;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
+  H.t0=performance.now()+50;
+  for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
   H.raf=requestAnimationFrame(loop);
-  await esperarToque(()=>{
-    latidoHaptico(n,iv);
-    try{ensureCtx();const T=actx.currentTime+.02;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
-    H.t0=performance.now()+20;
-    for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
-  });
   $("lt-bot").style.opacity=1;
   {let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60)}
   await sleep(n*iv*1000+250);
@@ -594,8 +650,6 @@ async function botMsg(html,xc,ms){const t=document.createElement("div");t.classN
 async function ellos(html,xc,ms){setEstado("escribiendo…");const t=document.createElement("div");t.className="typing";t.innerHTML="<i></i><i></i><i></i>";M.appendChild(t);scroll();await pausa(ms??Math.min(3000,600+html.replace(/<[^>]+>/g,"").length*22));t.remove();setEstado("en línea");return burbuja(html,"ellos",xc)}
 function yoDigo(t){return burbuja(t,"yo")}
 function elegir(opts){return new Promise(res=>{const cont=$("opciones");cont.innerHTML="";opts.forEach(o=>{const b=document.createElement("button");b.className="opcion"+(o.p?" primaria":"")+(o.m?" mega":"");b.textContent=o.label;b.onclick=()=>{cont.innerHTML='<div class="vacia">…</div>';if(!o.s)yoDigo(o.label);res(o.v??o.label)};cont.appendChild(b)});scroll()})}
-function elegirReaccion(){return new Promise(res=>{const cont=$("opciones");cont.innerHTML="";const hdr=document.createElement("div");hdr.className="reac-hdr";hdr.textContent="¿Tu primera reacción?";cont.appendChild(hdr);const grid=document.createElement("div");grid.className="reac-grid";cont.appendChild(grid);
-  [{e:"🥹",l:"Lloré"},{e:"🤩",l:"¡WOW!"},{e:"😱",l:"¡No puede ser!"},{e:"💛",l:"¡Los amo!"}].forEach((em,i)=>{const b=document.createElement("button");b.className="opcion emoji-op";b.style.animationDelay=`${i*.07}s`;b.innerHTML=`<span class="e">${em.e}</span><span class="l">${em.l}</span>`;b.onclick=()=>{cont.innerHTML='<div class="vacia">…</div>';yoDigo(`${em.e} ${em.l}`);res(`${em.e} ${em.l}`)};grid.appendChild(b)});scroll()})}
 function formInline(campos,btn){return new Promise(res=>{$("opciones").innerHTML="";const f=$("form-inline");f.style.display="flex";f.innerHTML="";
   const inputs=campos.map(c=>{let el;if(c.area){el=document.createElement("textarea");el.className="txt-chat";el.rows=4}else{el=document.createElement("input");el.className="in-chat";el.type="text"}el.placeholder=c.ph;el.maxLength=c.max||300;f.appendChild(el);return el});
   const b=document.createElement("button");b.className="opcion primaria";b.style.alignSelf="flex-end";b.textContent=btn;
@@ -670,12 +724,7 @@ async function guion(){
   await ellos(`¡Gracias por ser parte de este momento, ${fn}! 💛`,null,1600);
   await pausa(700);
 
-  /* ── FASE 3: REACCIÓN Y MENSAJE (después de la noticia) ── */
-  await botMsg("¿Cuál fue tu primera reacción?",null,400);
-  await pausa(200);
-  YO.reaccion_emoji=await elegirReaccion();
-  await botMsg("¡Se van a alegrar mucho cuando lo vean! 🥹",null,380);
-  await pausa(400);
+  /* ── FASE 3: MENSAJE PARA LOS PAPÁS ── */
   await botMsg("¿Querés dejarles un mensajito a los papás? 💌",null,420);
   await pausa(200);
   const v=await elegir([{label:"Escribirles algo",v:"msg",p:true},{label:"No, gracias",v:"skip"}]);
@@ -765,8 +814,11 @@ function volverAlChat(){
 
 let guionIniciado=false;
 /* Música NO arranca aquí — arranca en el guion, fase 2 */
-function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();hapticInit();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
-(function init(){const p=leerPase();if(p&&p.nombre)irDirecto(p)})();
+function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();hapticInit();vibrarRaw([60,50,60],"apertura");$("notif").classList.add("closed");setTimeout(guion,400)}
+(function init(){
+  if(/[?&#]vib/.test(location.href)){document.body.classList.add("diag");vdInit();return}
+  const p=leerPase();if(p&&p.nombre)irDirecto(p);
+})();
 </script>
 </body>
 </html>
