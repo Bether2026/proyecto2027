@@ -129,6 +129,9 @@ a{color:var(--gold);text-decoration:none}a:hover{color:var(--gold-hi)}
 .lt-bpm{font-family:var(--serif);font-weight:300;font-size:clamp(3.4rem,16vw,4.6rem);line-height:1;color:var(--cream);font-variant-numeric:tabular-nums}
 .lt-bpm small{font-family:var(--sans);font-size:.7rem;font-weight:600;letter-spacing:.3em;color:var(--rose);margin-left:6px;vertical-align:middle}
 .lt-cap{font-size:.78rem;color:var(--dim);letter-spacing:.06em;margin-top:8px}
+.lt-tap{position:absolute;left:0;right:0;bottom:max(env(safe-area-inset-bottom),12vh);text-align:center;z-index:2;font-family:var(--serif);font-style:italic;font-size:clamp(1.2rem,5vw,1.5rem);color:var(--cream);opacity:0;transition:opacity .6s;pointer-events:none}
+.lt-tap small{display:block;font-family:var(--sans);font-style:normal;font-size:.6rem;letter-spacing:.4em;text-transform:uppercase;color:var(--rose);margin-top:10px;animation:blink 1.6s ease-in-out infinite}
+#latido.esperando{cursor:pointer}
 #lt-reveal{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;opacity:0;pointer-events:none;transition:opacity .8s}
 #lt-reveal.on{opacity:1;pointer-events:auto}
 .ltr-pre{font-size:.66rem;letter-spacing:.46em;text-transform:uppercase;color:var(--gold)}
@@ -278,6 +281,7 @@ footer a:hover{color:var(--gold)}
     <div class="lt-pre">Escuchá</div>
     <div class="lt-tit">un corazón nuevo</div>
   </div>
+  <div class="lt-tap" id="lt-tap">Apoyá tu dedo sobre el corazón<small>tocá para escucharlo</small></div>
   <div class="lt-bot" id="lt-bot">
     <div class="lt-bpm"><span id="lt-n">0</span><small>LPM</small></div>
     <div class="lt-cap">y late por primera vez para vos</div>
@@ -400,6 +404,7 @@ const CFG = {
   supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95aGJuemlzcmRvd2x3eWdoanJwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTU2ODgsImV4cCI6MjA5NTgzMTY4OH0.wKoyPCRuVbhzxbVsLUcw1h_uv2oGcxfuiJSHDOvgzaw",
   supabaseTable: "mensajes_bebe",
   bpm: 142,
+  ritmo: 1.7,   // velocidad del chat: 1 = rápido · 1.7 = pausado · 2.2 = muy lento
 };
 
 const YO={nombre:"",reaccion:"",reaccion_emoji:"",asiste:null};
@@ -440,24 +445,42 @@ function thump(t,gain,decay){
 }
 function sndBoom(){try{ensureCtx();const T=actx.currentTime;thump(T,.9,.9);const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(60,T);o.frequency.exponentialRampToValueAtTime(22,T+1.2);g.gain.setValueAtTime(.6,T);g.gain.exponentialRampToValueAtTime(.001,T+1.2);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+1.25)}catch(e){}}
 
-/* ─ VIBRACIÓN AL RITMO DEL LATIDO ─
-   En lugar de un array gigante (que los dispositivos cortan),
-   usamos setTimeout recursivo: cada latido dispara vibrate([lub, gap, dub]).
-   Se inicia con el mismo offset de 50 ms que el audio (actx.currentTime+.05).
+/* ─ VIBRACIÓN / HÁPTICA AL RITMO DEL LATIDO ─
+   Se dispara DENTRO del toque del usuario (requisito de los navegadores).
+   Android: un único patrón con todos los latidos.
+   iPhone (iOS 18+): truco del switch nativo de Safari, un "tic" por golpe.
 */
-function vibrarRitmo(durMs){
-  if(!navigator.vibrate)return;
-  const beatMs=60/CFG.bpm*1000; // ≈ 422 ms por latido
-  let elapsed=0;
-  const tick=()=>{
-    if(elapsed>=durMs)return;
-    try{navigator.vibrate(0);navigator.vibrate([62,72,40])}catch(e){}
-    elapsed+=beatMs;
-    setTimeout(tick,beatMs);
-  };
-  setTimeout(tick,50); // sincronizado con el primer thump
+const ES_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const HAP={lbl:null};
+function hapticInit(){
+  if(HAP.lbl)return;
+  const inp=document.createElement("input");inp.type="checkbox";inp.id="hap-sw";inp.setAttribute("switch","");
+  inp.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
+  const l=document.createElement("label");l.htmlFor="hap-sw";l.style.cssText="position:fixed;left:-9999px;top:0;opacity:0";
+  document.body.append(inp,l);HAP.lbl=l;
 }
-function vibrar(p){try{if(navigator.vibrate){navigator.vibrate(0);navigator.vibrate(p)}}catch(e){}}
+function hapticTap(){try{HAP.lbl&&HAP.lbl.click()}catch(e){}}
+function latidoHaptico(n,iv){
+  const beat=Math.round(iv*1000),lub=110,gap=80,dub=70;
+  if(navigator.vibrate&&!ES_IOS){
+    const p=[];for(let i=0;i<n;i++){p.push(lub,gap,dub);if(i<n-1)p.push(beat-lub-gap-dub)}
+    try{navigator.vibrate(p)}catch(e){}
+  }
+  if(ES_IOS){
+    hapticInit();
+    for(let i=0;i<n;i++){const t=i*beat;if(i===0)hapticTap();else setTimeout(hapticTap,t);setTimeout(hapticTap,t+110)}
+  }
+}
+function vibrar(p){try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}}
+function esperarToque(onTap){
+  return new Promise(res=>{
+    const ov=$("latido"),tap=$("lt-tap");ov.classList.add("esperando");tap.style.opacity=1;
+    let done=false;
+    const go=()=>{if(done)return;done=true;ov.removeEventListener("click",go);ov.classList.remove("esperando");onTap();tap.style.opacity=0;res()};
+    ov.addEventListener("click",go);
+    setTimeout(go,12000);
+  });
+}
 
 /* ─ MÚSICA DE FONDO — arranca en la fase 2, no en el chat ─ */
 const MUS={on:false,muted:false,master:null,timer:0,next:0,step:0};
@@ -492,16 +515,8 @@ async function corazonLatiendo(durMs){
   H.beats=[];H.parts=[];H.rings=[];H.ecg=[];H.grow=0;H.done=false;
   $("lt-top").style.opacity=1;$("lt-bot").style.opacity=1;$("lt-reveal").classList.remove("on");
   ov.classList.add("on");sndPad();musicaVol(0,1.2);
-  await sleep(900);
+  $("lt-bot").style.opacity=0;$("lt-n").textContent="0";
   const iv=60/CFG.bpm, n=Math.floor(durMs/1000/iv);
-  try{ensureCtx();const T=actx.currentTime+.05;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
-  H.t0=performance.now()+50;
-  for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
-  let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60);
-
-  /* vibración sincronizada al ritmo: setTimeout recursivo ≡ cada latido */
-  vibrarRitmo(durMs);
-
   let lastBeat=-1;
   const loop=now=>{
     const c=H.ctx,W=H.cv.width,Hh=H.cv.height,dpr=devicePixelRatio,el=now-H.t0;
@@ -530,7 +545,16 @@ async function corazonLatiendo(durMs){
     c.strokeStyle="rgba(255,120,140,.75)";c.lineWidth=1.6*dpr;c.shadowColor="#FF5A75";c.shadowBlur=10*dpr;c.stroke();c.shadowBlur=0;
     if(!H.done)H.raf=requestAnimationFrame(loop);
   };
+  H.t0=performance.now();
   H.raf=requestAnimationFrame(loop);
+  await esperarToque(()=>{
+    latidoHaptico(n,iv);
+    try{ensureCtx();const T=actx.currentTime+.02;for(let i=0;i<n;i++){const v=Math.min(1,.35+i*.08);thump(T+i*iv,.55*v,.2);thump(T+i*iv+.11,.32*v,.16)}}catch(e){}
+    H.t0=performance.now()+20;
+    for(let i=0;i<n;i++)H.beats.push(i*iv*1000);
+  });
+  $("lt-bot").style.opacity=1;
+  {let counted=0;const cnt=setInterval(()=>{counted=Math.min(CFG.bpm,counted+Math.ceil(CFG.bpm/26));$("lt-n").textContent=counted;if(counted>=CFG.bpm)clearInterval(cnt)},60)}
   await sleep(n*iv*1000+250);
   $("lt-top").style.opacity=0;$("lt-bot").style.opacity=0;
   const g0=performance.now();
@@ -565,8 +589,9 @@ function confetear(n,hearts){
 const M=$("mensajes");
 const scroll=()=>M.scrollTo({top:M.scrollHeight,behavior:"smooth"});
 function burbuja(html,quien,xc){const d=document.createElement("div");d.className=`msg ${quien}${xc?" "+xc:""}`;d.innerHTML=html+`<span class="hora">${hora()}</span>`;M.appendChild(d);scroll();quien==="ellos"?sndR():sndE();return d}
-async function botMsg(html,xc,ms){await sleep(ms??380);return burbuja(html,"ellos",xc)}
-async function ellos(html,xc,ms){setEstado("escribiendo…");const t=document.createElement("div");t.className="typing";t.innerHTML="<i></i><i></i><i></i>";M.appendChild(t);scroll();await sleep(ms??Math.min(2400,500+html.replace(/<[^>]+>/g,"").length*16));t.remove();setEstado("en línea");return burbuja(html,"ellos",xc)}
+const pausa=ms=>sleep(ms*CFG.ritmo);
+async function botMsg(html,xc,ms){const t=document.createElement("div");t.className="typing";t.innerHTML="<i></i><i></i><i></i>";M.appendChild(t);scroll();await pausa(Math.max(ms??600,650));t.remove();return burbuja(html,"ellos",xc)}
+async function ellos(html,xc,ms){setEstado("escribiendo…");const t=document.createElement("div");t.className="typing";t.innerHTML="<i></i><i></i><i></i>";M.appendChild(t);scroll();await pausa(ms??Math.min(3000,600+html.replace(/<[^>]+>/g,"").length*22));t.remove();setEstado("en línea");return burbuja(html,"ellos",xc)}
 function yoDigo(t){return burbuja(t,"yo")}
 function elegir(opts){return new Promise(res=>{const cont=$("opciones");cont.innerHTML="";opts.forEach(o=>{const b=document.createElement("button");b.className="opcion"+(o.p?" primaria":"")+(o.m?" mega":"");b.textContent=o.label;b.onclick=()=>{cont.innerHTML='<div class="vacia">…</div>';if(!o.s)yoDigo(o.label);res(o.v??o.label)};cont.appendChild(b)});scroll()})}
 function elegirReaccion(){return new Promise(res=>{const cont=$("opciones");cont.innerHTML="";const hdr=document.createElement("div");hdr.className="reac-hdr";hdr.textContent="¿Tu primera reacción?";cont.appendChild(hdr);const grid=document.createElement("div");grid.className="reac-grid";cont.appendChild(grid);
@@ -581,20 +606,20 @@ function formInline(campos,btn){return new Promise(res=>{$("opciones").innerHTML
 /* ══ EL GUION ══ */
 async function guion(){
   M.innerHTML='<div class="dia">Hoy</div>';
-  await sleep(700);
+  await pausa(700);
 
   /* ── FASE 1: CHAT NORMAL — sin música ── */
   await botMsg("¡Hola! 💌",null,400);
-  await sleep(350);
+  await pausa(350);
   await botMsg("Alguien especial pensó en vos para compartir un momento muy importante ✨");
-  await sleep(450);
+  await pausa(450);
   await botMsg("Antes de mostrarte la invitación… ¿cómo te llamo?");
-  await sleep(300);
+  await pausa(300);
   const [nombre]=await formInline([{ph:"Tu nombre",req:true,max:50}],"Listo →");
   YO.nombre=nombre;yoDigo(nombre);
   const fn=nombre.trim().split(" ")[0];
   await botMsg(`¡Hola, <b>${fn}</b>! Aquí está tu invitación`,null,450);
-  await sleep(600);
+  await pausa(600);
   burbuja(`<div class="inv-card">
       <div class="inv-pre">Save the date</div>
       <div class="inv-titulo">Un momento<br><em>muy especial</em></div>
@@ -603,31 +628,31 @@ async function guion(){
       <div class="inv-sub">Los detalles llegan muy pronto…</div>
       <div class="inv-firma">con todo el amor</div>
     </div>`,"ellos","inv-burbuja");
-  await sleep(900);
+  await pausa(900);
   await botMsg(`¿Podés estar, ${fn}? 🥂`,null,400);
-  await sleep(300);
+  await pausa(300);
   const asiste=await elegir([{label:"¡Cuento con estar!",v:true,p:true},{label:"No voy a poder",v:false}]);
   YO.asiste=asiste;
   await botMsg(asiste?"¡Genial! Va a ser un momento muy especial 🥳":"Ay, qué lástima 😢 Igual te mandamos todo el cariño",null,450);
-  await sleep(900);
+  await pausa(900);
 
   /* ── FASE 2: EL GIRO — la música arranca aquí ── */
   musicaStart();
 
   await ellos(`${fn}…`,null,1100);
-  await sleep(600);setEstado("en línea");await sleep(1100);
+  await pausa(600);setEstado("en línea");await pausa(1100);
   await ellos("Hay algo que tenemos que confesarte.",null,1600);
-  await sleep(500);
+  await pausa(500);
   await ellos("Esta invitación no es lo que parece. 😅",null,1800);
-  await sleep(400);
+  await pausa(400);
   await ellos("El evento no existe.",null,1100);
-  await sleep(500);
+  await pausa(500);
   await ellos("No hay ningún plan para noviembre.",null,1400);
-  await sleep(700);
+  await pausa(700);
   await ellos("La inventamos porque teníamos que darte una noticia y no se nos ocurrió otra manera de decírtela 🙈",null,2600);
-  await sleep(1100);
+  await pausa(1100);
   await ellos("Subí el volumen y escuchá esto…",null,1200);
-  await sleep(900);
+  await pausa(900);
 
   /* ══ CORAZÓN LATIENDO EN PRIMER PLANO → NOTICIA ══ */
   const app=$("app");
@@ -637,22 +662,22 @@ async function guion(){
   burbuja(`<div class="rv-pre">La verdadera noticia</div>
     <div class="rv-big">Bety y Ángel<br>van a ser <em>papás</em></div>
     <div class="rv-sub">Un bebé está en camino ✨</div>`,"ellos","revelacion");
-  await sleep(1300);
+  await pausa(1300);
   await ellos(`El bebé llega para el <b>1° de mayo de 2027</b> 🌟`,null,1500);
-  await sleep(400);
+  await pausa(400);
   await ellos("Ya tenemos 12 semanas… ¡y todavía no lo podemos creer! 🥹",null,2000);
-  await sleep(700);
+  await pausa(700);
   await ellos(`¡Gracias por ser parte de este momento, ${fn}! 💛`,null,1600);
-  await sleep(700);
+  await pausa(700);
 
   /* ── FASE 3: REACCIÓN Y MENSAJE (después de la noticia) ── */
   await botMsg("¿Cuál fue tu primera reacción?",null,400);
-  await sleep(200);
+  await pausa(200);
   YO.reaccion_emoji=await elegirReaccion();
   await botMsg("¡Se van a alegrar mucho cuando lo vean! 🥹",null,380);
-  await sleep(400);
+  await pausa(400);
   await botMsg("¿Querés dejarles un mensajito a los papás? 💌",null,420);
-  await sleep(200);
+  await pausa(200);
   const v=await elegir([{label:"Escribirles algo",v:"msg",p:true},{label:"No, gracias",v:"skip"}]);
   if(v==="msg"){
     await botMsg("¡Dale! Lo van a leer ese día 🥹",null,350);
@@ -661,7 +686,7 @@ async function guion(){
     await botMsg("¡Hermoso! Lo van a guardar para siempre 🥹",null,380);
   }
   await guardarMensaje();
-  await sleep(600);
+  await pausa(600);
   await elegir([{label:"Ver el anuncio completo",v:"go",p:true,m:true,s:true}]);
   revelarAnuncio();
 }
@@ -740,7 +765,7 @@ function volverAlChat(){
 
 let guionIniciado=false;
 /* Música NO arranca aquí — arranca en el guion, fase 2 */
-function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
+function abrirChat(){if(guionIniciado)return;guionIniciado=true;ensureCtx();hapticInit();vibrar(40);$("notif").classList.add("closed");setTimeout(guion,400)}
 (function init(){const p=leerPase();if(p&&p.nombre)irDirecto(p)})();
 </script>
 </body>
