@@ -444,11 +444,39 @@ function pop(f,v,t){try{ensureCtx();const T=actx.currentTime,o=actx.createOscill
 
 /* workaround: alias correcto */
 function pop2(f,v){try{ensureCtx();const T=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(f,T);g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtTime(.0001,T+.18);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+.2)}catch(e){}}
-const sndR=()=>pop2(540,.07),sndE=()=>pop2(760,.06);
+const sndR=()=>pop2(430,.035),sndE=()=>pop2(590,.03);
 
-function arpegio(fs,step,dur,type,vol){try{ensureCtx();const T=actx.currentTime;fs.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain(),t=T+i*step;o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+dur+.05)})}catch(e){}}
-const sndMagico=()=>arpegio([660,880,1100,1320,1760],.1,.9,"sine",.09);
-const sndReveal=()=>arpegio([392,523,659,784,1047,1319,1568,2093],.09,1.8,"triangle",.1);
+/* Acorde suave: ataque lento y cola larga. Nada de arpegios rápidos
+   (ese era el sonido "videojuego"); esto respira como un suspiro. */
+function acordeSuave(freqs,o){
+  o=o||{};
+  const at=o.at??.5, rel=o.rel??3.2, vol=o.vol??.03, tipo=o.tipo||"sine", esc=o.esc??0;
+  try{
+    ensureCtx();const T=actx.currentTime;
+    const lp=actx.createBiquadFilter();lp.type="lowpass";lp.frequency.value=o.lp??1800;lp.Q.value=.6;
+    lp.connect(actx.destination);
+    freqs.forEach((f,i)=>{
+      const t=T+i*esc;
+      const osc=actx.createOscillator(),g=actx.createGain();
+      osc.type=tipo;osc.frequency.value=f;
+      /* leve desafinación: suena a instrumento, no a sintetizador */
+      osc.detune.value=(i%2?1:-1)*rnd(1,5);
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(vol,t+at);
+      g.gain.linearRampToValueAtTime(vol*.6,t+at+.5);
+      g.gain.exponentialRampToValueAtTime(.0008,t+at+rel);
+      osc.connect(g);g.connect(lp);
+      osc.start(t);osc.stop(t+at+rel+.1);
+    });
+  }catch(e){}
+}
+/* Fa mayor con séptima: cálido, no triunfal */
+const sndReveal=()=>{
+  acordeSuave([174.61,261.63,349.23,440,523.25],{at:.55,rel:4.2,vol:.032,lp:1600,esc:.07});
+  acordeSuave([698.46,1046.5],{at:1.1,rel:4,vol:.012,lp:3200,esc:.45});
+};
+/* Transición al anuncio: un soplo, apenas perceptible */
+const sndMagico=()=>acordeSuave([261.63,392,523.25,659.25],{at:.7,rel:3.4,vol:.022,lp:2000,esc:.1});
 function sndPad(){try{ensureCtx();const T=actx.currentTime;[261.6,329.6,392,523.2].forEach(f=>{const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.value=f;g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(.05,T+.6);g.gain.exponentialRampToValueAtTime(.001,T+5);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+5.1)})}catch(e){}}
 function thump(t,gain,decay){
   try{
@@ -463,7 +491,14 @@ function thump(t,gain,decay){
     s.connect(bf);bf.connect(gn);gn.connect(actx.destination);s.start(t);
   }catch(e){}
 }
-function sndBoom(){try{ensureCtx();const T=actx.currentTime;thump(T,.9,.9);const o=actx.createOscillator(),g=actx.createGain();o.type="sine";o.frequency.setValueAtTime(60,T);o.frequency.exponentialRampToValueAtTime(22,T+1.2);g.gain.setValueAtTime(.6,T);g.gain.exponentialRampToValueAtTime(.001,T+1.2);o.connect(g);g.connect(actx.destination);o.start(T);o.stop(T+1.25)}catch(e){}}
+/* El último latido: un golpe cálido y redondo, sin el sub-bajo de antes */
+function sndBoom(){try{ensureCtx();const T=actx.currentTime;
+  thump(T,.42,.75);
+  const o=actx.createOscillator(),g=actx.createGain(),lp=actx.createBiquadFilter();
+  lp.type="lowpass";lp.frequency.value=220;
+  o.type="sine";o.frequency.setValueAtTime(78,T);o.frequency.exponentialRampToValueAtTime(40,T+.9);
+  g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(.26,T+.03);g.gain.exponentialRampToValueAtTime(.001,T+.95);
+  o.connect(g);g.connect(lp);lp.connect(actx.destination);o.start(T);o.stop(T+1)}catch(e){}}
 
 /* ─────────────────────────────────────────────────────
    VIBRACIÓN / HÁPTICA
@@ -624,8 +659,8 @@ async function corazonLatiendo(durMs){
   fl.style.transition="opacity 1.1s";fl.style.opacity=0;
   splitChars($("ltr-big"));
   $("lt-reveal").classList.add("on");
-  sndReveal();confetear(220,true);
-  setTimeout(()=>confetear(120,true),900);
+  sndReveal();confetear(170);
+  setTimeout(()=>confetear(90),900);
   return new Promise(res=>{H.cerrar=res;H.auto=setTimeout(cerrarLatido,7000)});
 }
 function splitChars(el){if(el.dataset.s)return;el.dataset.s=1;const t=el.textContent;el.innerHTML="";[...t].forEach((ch,i)=>{const s=document.createElement("span");s.className="ltr-ch";s.textContent=ch;s.style.transitionDelay=(.35+i*.09)+"s";el.appendChild(s)})}
@@ -634,12 +669,85 @@ function cerrarLatido(){if(!H.cerrar)return;clearTimeout(H.auto);musicaVol(1,3);
 /* ─ CONFETTI ─ */
 const cv=$("ccv"),cx=cv.getContext("2d");let CW,CH,confs=[];
 const cres=()=>{CW=cv.width=innerWidth;CH=cv.height=innerHeight};cres();addEventListener("resize",cres);
-function confetear(n,hearts){
-  n=n||80;if(RM)n=Math.ceil(n/3);
-  const col=["#E9C46A","#FFE6A8","#F2A6A0","#E0465A","#FBF4EA","#C9A04A"];
-  for(let i=0;i<n;i++)confs.push({x:rnd(CW*.2,CW*.8),y:rnd(CH*.25,CH*.55),vx:rnd(-9,9),vy:rnd(-15,-4),w:rnd(4,9),h:rnd(6,13),rot:rnd(0,7),rv:rnd(-.3,.3),life:1,decay:rnd(.004,.011),c:col[~~(Math.random()*col.length)],hr:hearts&&Math.random()>.7});
+/* ─────────────────────────────────────────────────
+   LLUVIA DE COSITAS DE BEBÉ
+   Chupetes, mamaderas, corazones, estrellitas y
+   puntitos — dibujados a mano en canvas, en la
+   misma paleta dorada/rosa del resto.
+───────────────────────────────────────────────── */
+function rRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.quadraticCurveTo(x+w,y,x+w,y+r);
+  c.lineTo(x+w,y+h-r);c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  c.lineTo(x+r,y+h);c.quadraticCurveTo(x,y+h,x,y+h-r);
+  c.lineTo(x,y+r);c.quadraticCurveTo(x,y,x+r,y);c.closePath();
 }
-(function cf(){cx.clearRect(0,0,CW,CH);for(let i=confs.length-1;i>=0;i--){const c=confs[i];c.x+=c.vx;c.y+=c.vy;c.vy+=.17;c.vx*=.985;c.rot+=c.rv;c.life-=c.decay;if(c.life<=0||c.y>CH+30){confs.splice(i,1);continue}cx.save();cx.translate(c.x,c.y);cx.rotate(c.rot);cx.globalAlpha=Math.min(1,c.life*1.4);cx.fillStyle=c.c;if(c.hr){heartPath(cx,.45);cx.fill()}else cx.fillRect(-c.w/2,-c.h/2,c.w*Math.abs(Math.sin(c.rot*2))+1,c.h);cx.restore()}requestAnimationFrame(cf)})();
+/* Chupete: aro + escudo + tetina */
+function dibChupete(c,s,col){
+  c.fillStyle=col;c.strokeStyle=col;
+  c.lineWidth=s*.105;
+  c.beginPath();c.arc(0,-s*.58,s*.25,0,Math.PI*2);c.stroke();            // aro
+  c.beginPath();c.ellipse(0,-s*.02,s*.6,s*.33,0,0,Math.PI*2);c.fill();   // escudo ancho
+  rRect(c,-s*.2,s*.2,s*.4,s*.38,s*.18);c.fill();                         // tetina
+}
+/* Mamadera: cuerpo + rosca + tetina + marcas */
+function dibMamadera(c,s,col){
+  c.fillStyle=col;
+  rRect(c,-s*.3,-s*.1,s*.6,s*.82,s*.14);c.fill();   // cuerpo
+  rRect(c,-s*.22,-s*.26,s*.44,s*.17,s*.05);c.fill(); // rosca
+  c.beginPath();
+  c.moveTo(-s*.12,-s*.26);c.quadraticCurveTo(0,-s*.72,s*.12,-s*.26);
+  c.closePath();c.fill();                            // tetina
+  c.globalAlpha*=.42;c.fillStyle="#2a1a04";
+  c.fillRect(-s*.16,s*.14,s*.2,s*.045);
+  c.fillRect(-s*.16,s*.32,s*.2,s*.045);
+}
+/* Estrellita de cuatro puntas */
+function dibEstrella(c,s,col){
+  c.fillStyle=col;c.beginPath();
+  c.moveTo(0,-s*.6);c.quadraticCurveTo(s*.1,-s*.1,s*.6,0);
+  c.quadraticCurveTo(s*.1,s*.1,0,s*.6);
+  c.quadraticCurveTo(-s*.1,s*.1,-s*.6,0);
+  c.quadraticCurveTo(-s*.1,-s*.1,0,-s*.6);
+  c.closePath();c.fill();
+}
+const COSITAS=["chupete","chupete","mamadera","mamadera","corazon","estrella","punto"];
+const PALETA=["#E9C46A","#FFE6A8","#F2A6A0","#FBF4EA","#C9A04A","#F7C8D8","#B8C6E8"];
+
+function confetear(n){
+  n=n||80;if(RM)n=Math.ceil(n/3);
+  for(let i=0;i<n;i++)confs.push({
+    x:rnd(CW*.15,CW*.85), y:rnd(CH*.2,CH*.55),
+    vx:rnd(-6.5,6.5), vy:rnd(-13,-3.5),
+    s:rnd(11,23), rot:rnd(0,7), rv:rnd(-.13,.13),
+    sway:rnd(0,7), swaySp:rnd(.02,.055),
+    life:1, decay:rnd(.0035,.009),
+    c:PALETA[~~(Math.random()*PALETA.length)],
+    k:COSITAS[~~(Math.random()*COSITAS.length)]
+  });
+}
+(function cf(){
+  cx.clearRect(0,0,CW,CH);
+  for(let i=confs.length-1;i>=0;i--){
+    const c=confs[i];
+    c.sway+=c.swaySp;
+    c.x+=c.vx+Math.sin(c.sway)*.9;   // balanceo suave al caer
+    c.y+=c.vy;
+    c.vy+=.14; c.vx*=.988; c.rot+=c.rv;
+    c.life-=c.decay;
+    if(c.life<=0||c.y>CH+40){confs.splice(i,1);continue}
+    cx.save();
+    cx.translate(c.x,c.y);cx.rotate(c.rot);
+    cx.globalAlpha=Math.min(1,c.life*1.5);
+    if(c.k==="chupete")       dibChupete(cx,c.s,c.c);
+    else if(c.k==="mamadera") dibMamadera(cx,c.s,c.c);
+    else if(c.k==="estrella") dibEstrella(cx,c.s,c.c);
+    else if(c.k==="corazon"){ cx.fillStyle=c.c;heartPath(cx,c.s*.034);cx.fill() }
+    else { cx.fillStyle=c.c;cx.beginPath();cx.arc(0,0,c.s*.14,0,Math.PI*2);cx.fill() }
+    cx.restore();
+  }
+  requestAnimationFrame(cf);
+})();
 
 /* ─ CHAT ENGINE ─ */
 const M=$("mensajes");
@@ -690,9 +798,7 @@ async function guion(){
   await botMsg(asiste?"¡Genial! Va a ser un momento muy especial 🥳":"Ay, qué lástima 😢 Igual te mandamos todo el cariño",null,450);
   await pausa(900);
 
-  /* ── FASE 2: EL GIRO — la música arranca aquí ── */
-  musicaStart();
-
+  /* ── FASE 2: EL GIRO — en silencio, para que el latido pese ── */
   await ellos(`${fn}…`,null,1100);
   await pausa(600);setEstado("en línea");await pausa(1100);
   await ellos("Hay algo que tenemos que confesarte.",null,1600);
@@ -712,6 +818,9 @@ async function guion(){
   const app=$("app");
   app.style.animation="shakeIntense .5s";setTimeout(()=>app.style.animation="",520);
   await corazonLatiendo(5200);
+
+  /* La música de fondo entra recién ahora, cuando el latido ya terminó */
+  musicaStart();
 
   burbuja(`<div class="rv-pre">La verdadera noticia</div>
     <div class="rv-big">Bety y Ángel<br>van a ser <em>papás</em></div>
@@ -757,7 +866,7 @@ function revelarAnuncio(){
   setTimeout(()=>{
     app.classList.add("fuera");document.body.classList.add("modo-anuncio");
     prepararAnuncio();iniciarBgCanvas();iniciarCountdown();
-    scrollTo(0,0);$("flash").style.transition="opacity .9s";$("flash").style.opacity=0;confetear(170,true);
+    scrollTo(0,0);$("flash").style.transition="opacity .9s";$("flash").style.opacity=0;confetear(130);
     setTimeout(()=>initRevealsSections(),500);
     setTimeout(()=>{const b=$("btn-volver");b.classList.add("show");b.style.opacity="1";b.style.transform="none"},1200);
   },1250);
