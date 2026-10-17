@@ -84,7 +84,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .contenido{flex:1;padding:20px;max-width:700px;margin:0 auto;width:100%}
 
 /* STATS */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
 .stat{
   background:var(--card);border:1px solid var(--border);border-radius:14px;
   padding:16px 12px;text-align:center;
@@ -184,16 +184,13 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   <div class="contenido">
     <!-- STATS -->
     <div class="stats">
-      <div class="stat"><div class="stat-n dorado" id="st-total">–</div><div class="stat-l">Total</div></div>
-      <div class="stat"><div class="stat-n verde" id="st-si">–</div><div class="stat-l">Confirman</div></div>
-      <div class="stat"><div class="stat-n rojo" id="st-no">–</div><div class="stat-l">No van</div></div>
+      <div class="stat"><div class="stat-n dorado" id="st-total">–</div><div class="stat-l">Lo vieron</div></div>
+      <div class="stat"><div class="stat-n rojo" id="st-msg">–</div><div class="stat-l">Con mensaje</div></div>
     </div>
 
     <!-- TABS -->
     <div class="tabs">
       <button class="tab activo" id="tab-todos" onclick="setTab('todos')">Todos</button>
-      <button class="tab" id="tab-si" onclick="setTab('si')">✔ Confirman</button>
-      <button class="tab" id="tab-no" onclick="setTab('no')">✖ No van</button>
       <button class="tab" id="tab-msg" onclick="setTab('msg')">💛 Con mensaje</button>
     </div>
 
@@ -258,11 +255,9 @@ async function cargar(){
 
 // ── STATS ──
 function renderStats(){
-  const si = todos.filter(m => m.asiste).length;
-  const no = todos.filter(m => !m.asiste).length;
+  const conMsg = todos.filter(m => m.mensaje && m.mensaje.trim()).length;
   document.getElementById('st-total').textContent = todos.length;
-  document.getElementById('st-si').textContent    = si;
-  document.getElementById('st-no').textContent    = no;
+  document.getElementById('st-msg').textContent   = conMsg;
 }
 
 // ── TABS ──
@@ -276,8 +271,6 @@ function setTab(t){
 // ── LISTA ──
 function renderLista(){
   let data = todos;
-  if(tabActual === 'si')  data = todos.filter(m => m.asiste);
-  if(tabActual === 'no')  data = todos.filter(m => !m.asiste);
   if(tabActual === 'msg') data = todos.filter(m => m.mensaje && m.mensaje.trim());
 
   const el = document.getElementById('lista');
@@ -293,7 +286,6 @@ function renderLista(){
       <div class="t-head">
         <span class="t-num">${String(i+1).padStart(2,'0')}</span>
         <span class="t-nombre">${esc(m.nombre||'—')}</span>
-        <span class="t-badge ${m.asiste?'badge-si':'badge-no'}">${m.asiste?'✔ Va':'✖ No va'}</span>
       </div>
       <div class="t-sep"></div>
       ${tieneMsg
@@ -337,9 +329,7 @@ async function exportar(){
       <div style="position:absolute;top:0;bottom:0;left:52px;width:1px;background:rgba(233,196,106,.2)"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <span style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:1.1rem;color:#A97C2A;min-width:24px">${String(i+1).padStart(2,'0')}</span>
-        <span style="font-family:Manrope,system-ui,sans-serif;font-weight:600;font-size:.9rem;color:#2C2C3E">${esc(m.nombre||'—')}</span>
-        <span style="margin-left:auto;font-size:.62rem;font-weight:600;padding:2px 8px;border-radius:99px;background:${m.asiste?'rgba(26,138,58,.08)':'rgba(160,100,80,.07)'};color:${m.asiste?'#1a6a3a':'#a05040'};border:1px solid ${m.asiste?'rgba(26,138,58,.18)':'rgba(160,100,80,.18)'}">${m.asiste?'✔ Estuvo':'✖ No pudo ir'}</span>
-      </div>
+        <span style="font-family:Manrope,system-ui,sans-serif;font-weight:600;font-size:.9rem;color:#2C2C3E">${esc(m.nombre||'—')}</span>      </div>
       <div style="width:100%;height:1px;background:linear-gradient(90deg,rgba(233,196,106,.25),transparent);margin-bottom:9px"></div>
       <p style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.05rem;line-height:1.72;color:#2C2C3E;font-style:italic;padding-left:4px">"${esc(m.mensaje)}"</p>
     `;
