@@ -957,7 +957,23 @@ async function guion(){
 async function guardarMensaje(){
   const reg={nombre:YO.nombre,mensaje:YO.reaccion,reaccion_emoji:YO.reaccion_emoji,asiste:YO.asiste,ts:new Date().toISOString(),evento:"bebe-2027"};
   try{const l=JSON.parse(localStorage.getItem("bebe-mensajes")||"[]");l.push(reg);localStorage.setItem("bebe-mensajes",JSON.stringify(l))}catch(e){}
-  if(CFG.supabaseUrl&&CFG.supabaseKey){try{await fetch(`${CFG.supabaseUrl}/rest/v1/${CFG.supabaseTable}`,{method:"POST",headers:{"Content-Type":"application/json","apikey":CFG.supabaseKey,"Authorization":`Bearer ${CFG.supabaseKey}`,"Prefer":"return=minimal"},body:JSON.stringify(reg)})}catch(e){}}
+  if(CFG.supabaseUrl&&CFG.supabaseKey){
+    try{
+      const res=await fetch(`${CFG.supabaseUrl}/rest/v1/${CFG.supabaseTable}`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":CFG.supabaseKey,"Authorization":`Bearer ${CFG.supabaseKey}`,"Prefer":"return=minimal"},
+        body:JSON.stringify(reg)
+      });
+      if(!res.ok){
+        const txt=await res.text();
+        console.error("Supabase error",res.status,txt);
+        toast("⚠️ Error al guardar: "+res.status+" · "+txt.slice(0,80));
+      }
+    }catch(e){
+      console.error("Supabase fetch error",e);
+      toast("⚠️ Sin conexión al guardar mensaje");
+    }
+  }
 }
 
 /* ─ TRANSICIÓN AL ANUNCIO ─ */
