@@ -978,7 +978,9 @@ function revelarAnuncio(){
 }
 
 function prepararAnuncio(){
-  $("eco-contenido").innerHTML=CFG.ecoFoto?`<img src="${CFG.ecoFoto}" class="eco-img" alt="Ecografía de nuestro bebé">`:`<div class="eco-placeholder"><div class="eco-heart">♥</div><div class="eco-label">ecografía · próximamente</div></div>`;
+  $("eco-contenido").innerHTML=CFG.ecoFoto
+    ?`<img src="${CFG.ecoFoto}" class="eco-img" alt="Ecografía de nuestro bebé">`
+    :`<video class="eco-img" src="eco-anuncio.mp4" autoplay loop muted playsinline style="border-radius:20px;width:100%;display:block"></video>`;
   const bar=$("sem-bar");bar.innerHTML="";for(let i=0;i<40;i++){const s=document.createElement("i");if(i<12)s.className="f"+(i===11?" now":"");bar.appendChild(s)}
   const fn=YO.nombre.trim().split(" ")[0]||"";
   if(YO.reaccion){$("seccion-tu-msg").style.display="block";$("tu-msg-display").textContent=`"${YO.reaccion}"`;$("tu-msg-firma").textContent=YO.nombre}
